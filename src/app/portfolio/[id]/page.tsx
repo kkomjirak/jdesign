@@ -111,7 +111,7 @@ export default async function PortfolioDetailPage({
           <span className="text-xs font-semibold uppercase tracking-wider text-[#0066CC]">
             {project.category || "Product Design"}
           </span>
-          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7] mt-2 leading-tight font-product">
+          <h1 className="text-3xl md:text-5xl font-[300] tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7] mt-2 leading-tight font-product">
             {project.title}
           </h1>
           <p className="mt-4 text-sm md:text-base text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60 max-w-xl mx-auto">

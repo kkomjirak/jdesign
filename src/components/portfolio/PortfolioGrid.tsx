@@ -105,7 +105,7 @@ export default function PortfolioGrid() {
               </div>
 
               {/* 텍스트 영역 (타이틀만 표시) */}
-              <h3 className="mt-3.5 text-[21px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight group-hover:text-[#0066CC] transition-colors duration-300 font-product">
+              <h3 className="mt-3.5 text-[21px] font-[300] text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight group-hover:text-[#0066CC] transition-colors duration-300 font-product">
                 {product.title}
               </h3>
               

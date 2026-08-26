@@ -1,16 +1,10 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css");
 @import "tailwindcss";
 
 @font-face {
-  font-family: 'EliceDigitalBaeum';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_elice@1.0/EliceDigitalBaeum.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'EliceDigitalBaeum-Bd';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_elice@1.0/EliceDigitalBaeum-Bd.woff2') format('woff2');
-  font-weight: 700;
+  font-family: 'Pretendard-Light';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2') format('woff2');
+  font-weight: 300;
   font-display: swap;
 }
 
@@ -19,8 +13,8 @@
 @theme {
   --color-apple-blue: #0066CC;
   
-  --font-sans: "SF Pro KR", "SF Pro Display", "SF Pro Text", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif;
-  --font-product: 'EliceDigitalBaeum-Bd', 'EliceDigitalBaeum', sans-serif;
+  --font-sans: "SF Pro KR", "SF Pro Display", "SF Pro Text", "Pretendard", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif;
+  --font-product: 'Pretendard-Light', 'Pretendard', sans-serif;
   
   --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
@@ -42,5 +36,6 @@ body {
 }
 
 .font-product {
-  font-family: 'EliceDigitalBaeum-Bd', 'EliceDigitalBaeum', sans-serif;
+  font-family: 'Pretendard-Light', 'Pretendard', sans-serif;
+  font-weight: 300;
 }
