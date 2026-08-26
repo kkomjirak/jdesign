@@ -120,11 +120,11 @@ export default async function PortfolioDetailPage({
         </div>
 
         {/* Main Product Thumbnail Display */}
-        <div className="w-full max-w-[768px] mx-auto aspect-square rounded-[24px] overflow-hidden flex items-center justify-center bg-[#ffffff]">
+        <div className="w-full max-w-[768px] mx-auto aspect-square rounded-[5px] overflow-hidden flex items-center justify-center bg-[#ffffff]">
           <img
             src={project.image}
             alt={project.title}
-            className="w-full h-full object-contain bg-[#ffffff]"
+            className="w-full h-full object-contain bg-[#ffffff] rounded-[5px]"
           />
         </div>
 
@@ -132,7 +132,7 @@ export default async function PortfolioDetailPage({
         <DetailGalleryView images={detailImages} projectTitle={project.title} />
 
         {/* CTA Banner */}
-        <div className="mt-16 md:mt-24 p-8 md:p-12 rounded-[28px] bg-white dark:bg-[#1C1C1E] border border-[#1D1D1F]/5 dark:border-white/10 text-center flex flex-col items-center justify-center gap-4 shadow-sm">
+        <div className="mt-16 md:mt-24 p-8 md:p-12 rounded-[5px] bg-white dark:bg-[#1C1C1E] border border-[#1D1D1F]/5 dark:border-white/10 text-center flex flex-col items-center justify-center gap-4 shadow-sm">
           <h3 className="text-xl md:text-2xl font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
             이 프로젝트에 대해 궁금하신가요?
           </h3>

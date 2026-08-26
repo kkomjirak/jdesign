@@ -74,7 +74,7 @@ export default function Hero() {
       {/* Product Image/Video Placeholder */}
       <div ref={mediaRef} className="absolute bottom-0 w-full max-w-[1024px] h-[55%] md:h-[65%] z-10 flex items-end justify-center px-4">
         {/* Placeholder (Width: 1024, Height: ~600) */}
-        <div className="relative w-full h-full bg-white rounded-t-[32px] md:rounded-t-[48px] overflow-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-x border-[#E5E5EA] flex flex-col items-center justify-center">
+        <div className="relative w-full h-full bg-white rounded-t-[5px] overflow-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-x border-[#E5E5EA] flex flex-col items-center justify-center">
            <span className="text-[#1D1D1F]/40 text-sm md:text-lg font-semibold tracking-widest uppercase">
               Product Media Area
            </span>

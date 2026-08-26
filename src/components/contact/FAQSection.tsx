@@ -49,7 +49,7 @@ export default function FAQSection() {
           return (
             <div
               key={index}
-              className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-[#1D1D1F]/5 dark:border-white/10 overflow-hidden transition-colors duration-300"
+              className="bg-white dark:bg-[#1C1C1E] rounded-[5px] border border-[#1D1D1F]/5 dark:border-white/10 overflow-hidden transition-colors duration-300"
             >
               <button
                 onClick={() => toggleFAQ(index)}

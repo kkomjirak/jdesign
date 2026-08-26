@@ -15,7 +15,7 @@ export default function ContactInfo() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[900px] mx-auto">
       {/* Email Card (Direct Contact) */}
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-6 md:p-8 shadow-sm border border-[#1D1D1F]/5 dark:border-white/10 transition-colors duration-300 flex flex-col justify-between">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-[5px] p-6 md:p-8 shadow-sm border border-[#1D1D1F]/5 dark:border-white/10 transition-colors duration-300 flex flex-col justify-between">
         <div>
           <span className="text-xs font-semibold text-[#0066CC] uppercase tracking-wider">
             Direct Contact
@@ -28,13 +28,13 @@ export default function ContactInfo() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between bg-[#F2F2F7] dark:bg-[#252528] p-3.5 rounded-xl border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC]/60 dark:hover:border-[#0066CC]/70 transition-all mt-2">
+        <div className="flex items-center justify-between bg-[#F2F2F7] dark:bg-[#252528] p-3.5 rounded-[5px] border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC]/60 dark:hover:border-[#0066CC]/70 transition-all mt-2">
           <span className="text-sm font-medium text-[#1D1D1F] dark:text-[#F5F5F7] truncate">
             {email}
           </span>
           <button
             onClick={copyEmail}
-            className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#1C1C1E] text-xs font-medium text-[#1D1D1F] dark:text-white border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC] hover:text-[#0066CC] shadow-2xs transition-all flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
+            className="px-3 py-1.5 rounded-[5px] bg-white dark:bg-[#1C1C1E] text-xs font-medium text-[#1D1D1F] dark:text-white border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC] hover:text-[#0066CC] shadow-2xs transition-all flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
           >
             {copied ? (
               <span className="text-emerald-500 font-semibold">복사됨!</span>
@@ -46,7 +46,7 @@ export default function ContactInfo() {
       </div>
 
       {/* Location & Hours Card */}
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-6 md:p-8 shadow-sm border border-[#1D1D1F]/5 dark:border-white/10 transition-colors duration-300 flex flex-col justify-between">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-[5px] p-6 md:p-8 shadow-sm border border-[#1D1D1F]/5 dark:border-white/10 transition-colors duration-300 flex flex-col justify-between">
         <div>
           <span className="text-xs font-semibold text-[#0066CC] uppercase tracking-wider">
             Location

@@ -99,7 +99,7 @@ export default function PortfolioGallery() {
             <div
               key={project.id}
               ref={el => { itemsRef.current[index] = el; }}
-              className={`group relative rounded-[28px] md:rounded-[40px] overflow-hidden flex flex-col justify-start ${project.colSpan} ${project.height} ${isDark ? "bg-[#000000]" : "bg-[#F5F5F7]"}`}
+              className={`group relative rounded-[5px] overflow-hidden flex flex-col justify-start ${project.colSpan} ${project.height} ${isDark ? "bg-[#000000]" : "bg-[#F5F5F7]"}`}
             >
               {/* 프로젝트 텍스트 정보 */}
               <div className="relative z-20 p-8 md:p-12 text-center flex flex-col items-center">
@@ -116,7 +116,7 @@ export default function PortfolioGallery() {
 
               {/* 하단 미디어 플레이스홀더 */}
               <div className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none pb-0">
-                <div className="relative w-[85%] h-[60%] rounded-t-[20px] bg-gradient-to-t from-gray-500/20 to-transparent flex items-center justify-center transform transition-transform duration-700 ease-apple group-hover:scale-105">
+                <div className="relative w-[85%] h-[60%] rounded-t-[5px] bg-gradient-to-t from-gray-500/20 to-transparent flex items-center justify-center transform transition-transform duration-700 ease-apple group-hover:scale-105">
                   <span className={`text-xs md:text-sm uppercase tracking-widest ${isDark ? "text-white/20" : "text-black/20"}`}>
                     Project Mockup
                   </span>
