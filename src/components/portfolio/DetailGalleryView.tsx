@@ -102,12 +102,12 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
                   <div
                     key={img.src}
                     onClick={() => openModal(img.src)}
-                    className="group relative w-full rounded-[20px] md:rounded-[24px] overflow-hidden flex items-center justify-center cursor-pointer"
+                    className="group relative w-full rounded-[20px] md:rounded-[24px] overflow-hidden flex items-center justify-center cursor-pointer bg-[#ffffff]"
                   >
                     <img
                       src={img.src}
                       alt={`${projectTitle} 상세 이미지`}
-                      className="w-full h-auto object-contain rounded-[20px] md:rounded-[24px] transition-transform duration-500 group-hover:scale-[1.01]"
+                      className="w-full h-auto object-contain rounded-[20px] md:rounded-[24px] transition-transform duration-500 group-hover:scale-[1.01] bg-[#ffffff]"
                       loading="lazy"
                     />
                   </div>
@@ -122,12 +122,12 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
             <div
               key={groupIdx}
               onClick={() => openModal(singleImg.src)}
-              className="group relative w-full rounded-[20px] md:rounded-[28px] overflow-hidden flex items-center justify-center cursor-pointer"
+              className="group relative w-full rounded-[20px] md:rounded-[28px] overflow-hidden flex items-center justify-center cursor-pointer bg-[#ffffff]"
             >
               <img
                 src={singleImg.src}
                 alt={`${projectTitle} 상세 이미지`}
-                className="w-full h-auto object-contain rounded-[20px] md:rounded-[28px] transition-transform duration-500 group-hover:scale-[1.01]"
+                className="w-full h-auto object-contain rounded-[20px] md:rounded-[28px] transition-transform duration-500 group-hover:scale-[1.01] bg-[#ffffff]"
                 loading="lazy"
               />
             </div>
@@ -191,7 +191,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
             <img
               src={images[activeModalIndex].src}
               alt={`${projectTitle} 상세 확대 시안`}
-              className="max-w-full max-h-[82vh] object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-[82vh] object-contain rounded-lg shadow-2xl bg-[#ffffff]"
             />
             <div className="mt-3 text-xs md:text-sm text-white/60 font-medium tracking-wide">
               {activeModalIndex + 1} / {images.length}

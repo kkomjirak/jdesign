@@ -120,11 +120,11 @@ export default async function PortfolioDetailPage({
         </div>
 
         {/* Main Product Thumbnail Display */}
-        <div className="w-full max-w-[768px] mx-auto aspect-square rounded-[24px] overflow-hidden flex items-center justify-center">
+        <div className="w-full max-w-[768px] mx-auto aspect-square rounded-[24px] overflow-hidden flex items-center justify-center bg-[#ffffff]">
           <img
             src={project.image}
             alt={project.title}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain bg-[#ffffff]"
           />
         </div>
 

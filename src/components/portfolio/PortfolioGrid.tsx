@@ -99,11 +99,11 @@ export default function PortfolioGrid() {
             >
               
               {/* 상단 이미지 카드 (테두리 제거) */}
-              <div className="w-full aspect-square rounded-[16px] overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02]">
+              <div className="w-full aspect-square rounded-[16px] overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02] bg-[#ffffff]">
                 <img 
                   src={product.image} 
                   alt={product.title}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain bg-[#ffffff]"
                 />
               </div>
 
