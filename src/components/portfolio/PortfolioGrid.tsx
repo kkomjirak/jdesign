@@ -86,8 +86,8 @@ export default function PortfolioGrid() {
           </div>
         </div>
 
-        {/* 4열 그리드 (가로 간격 32px, 세로 간격 64px) */}
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[32px] gap-y-[64px]">
+        {/* 4열 그리드 (가로 간격 24px, 세로 간격 48px) */}
+        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[24px] gap-y-[48px]">
           {currentProducts.map((product) => (
             <Link 
               key={product.id} 
