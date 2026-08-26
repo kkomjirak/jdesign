@@ -84,7 +84,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
     <div className="w-full mt-16 md:mt-24">
       {/* Visual Section Header */}
       <div className="flex flex-col items-center text-center mb-10 md:mb-14 pt-10 border-t border-[#1D1D1F]/10 dark:border-[#F5F5F7]/10">
-        <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+        <h2 className="text-2xl md:text-4xl font-[300] tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7] font-product">
           프로젝트 상세 시안
         </h2>
         <p className="mt-2 text-xs md:text-sm text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60">
