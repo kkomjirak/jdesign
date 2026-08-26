@@ -16,10 +16,7 @@ interface PortfolioItem {
   description?: string;
 }
 
-const allProducts: PortfolioItem[] = (portfolioData as PortfolioItem[]).map((item) => ({
-  ...item,
-  description: "jdesign의 디테일과 심미성이 담긴 산업/의료/제품 디자인 포트폴리오입니다.",
-}));
+const allProducts: PortfolioItem[] = portfolioData as PortfolioItem[];
 
 const tabs = ["모든 프로젝트", "Product", "UX/UI"];
 
@@ -89,8 +86,8 @@ export default function PortfolioGrid() {
           </div>
         </div>
 
-        {/* 4열 그리드 (모바일 1열, 태블릿 2열, 데스크탑 4열) - 간격 확장 */}
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16 md:gap-y-20">
+        {/* 4열 그리드 (가로 간격 32px, 세로 간격 64px) */}
+        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-[32px] gap-y-[64px]">
           {currentProducts.map((product) => (
             <Link 
               key={product.id} 
@@ -98,22 +95,19 @@ export default function PortfolioGrid() {
               className="flex flex-col items-center text-center group cursor-pointer"
             >
               
-              {/* 상단 이미지 카드 (테두리 제거) */}
+              {/* 상단 이미지 카드 (테두리 제거, 5px radius, white 배경) */}
               <div className="w-full aspect-square rounded-[5px] overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02] bg-[#ffffff]">
                 <img 
                   src={product.image} 
-                  alt={product.title}
+                  alt={product.title} 
                   className="w-full h-full object-contain bg-[#ffffff] rounded-[5px]"
                 />
               </div>
 
-              {/* 텍스트 영역 */}
+              {/* 텍스트 영역 (타이틀만 표시) */}
               <h3 className="mt-3.5 text-[21px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight group-hover:text-[#0066CC] transition-colors duration-300">
                 {product.title}
               </h3>
-              <p className="text-[13px] text-[#1D1D1F]/80 dark:text-[#F5F5F7]/80 mt-1 max-w-[80%] leading-relaxed h-[40px]">
-                {product.description}
-              </p>
               
             </Link>
           ))}
