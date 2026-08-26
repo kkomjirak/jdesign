@@ -51,14 +51,14 @@ export default function ContactPage() {
           </p>
         </div>
 
-        {/* Form & Info Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div ref={formRef} className="lg:col-span-7">
-            <ContactForm />
-          </div>
-          <div ref={infoRef} className="lg:col-span-5">
-            <ContactInfo />
-          </div>
+        {/* 1. Center Aligned Contact Form */}
+        <div ref={formRef} className="max-w-[800px] mx-auto w-full mb-12">
+          <ContactForm />
+        </div>
+
+        {/* 2. Direct Contact & Location Side-by-Side */}
+        <div ref={infoRef} className="max-w-[800px] mx-auto w-full mb-16">
+          <ContactInfo />
         </div>
 
         {/* FAQ Section */}
