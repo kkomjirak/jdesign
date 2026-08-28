@@ -15,19 +15,46 @@ Apple 감성의 미니멀하고 직관적인 인터랙션을 제공하는 **jiD 
 
 ---
 
-## 💻 로컬 개발 환경 (Mac)
+## 🚦 서버 시작하는 법 (Server Startup Guide)
 
+### 1️⃣ Mac 로컬에서 서버 시작
 ```bash
-# 1. 의존성 패키지 설치
-npm install
+cd /Volumes/Hagibis/Works/AI/Orca/jdesign
 
-# 2. 로컬 개발 서버 실행 (http://localhost:3000)
+# [방법 A] 로컬 개발 서버 시작 (수정 시 실시간 반영)
 npm run dev
+# 👉 브라우저 접속: http://localhost:3000
 
-# 3. 로컬 프로덕션 빌드 테스트
+# [방법 B] 로컬 프로덕션 서버 시작 (실제 배포 속도 테스트)
 npm run build
 npm start
+# 👉 브라우저 접속: http://localhost:3000
 ```
+
+---
+
+### 2️⃣ 라즈베리파이에서 서버 시작 (SSH 접속부터 실행까지)
+
+#### ① Mac 터미널에서 라즈베리파이 SSH 접속
+```bash
+ssh sonstick@192.168.50.39
+```
+
+#### ② 라즈베리파이 프로젝트 디렉토리로 이동
+```bash
+cd ~/jdesign/jdesign
+```
+
+#### ③ PM2로 백그라운드 서버 시작 (24시간 상시 운영, 가장 추천 ⭐)
+```bash
+# 1. 서버 시작 (포트 3000, 외부 IP 허용 -H 0.0.0.0)
+pm2 start npm --name "jdesign" -- start -- -H 0.0.0.0 -p 3000
+
+# 2. 라즈베리파이 재부팅 시에도 자동 시작되도록 등록
+pm2 startup
+pm2 save
+```
+> 💡 **단순 직접 실행(포그라운드)**: `npx next start -H 0.0.0.0 -p 3000` (SSH 터미널을 닫으면 종료됩니다)
 
 ---
 
@@ -67,23 +94,14 @@ git push origin main
 
 ---
 
-## 🔄 라즈베리파이 PM2 프로세스 관리 (24시간 상시 운영)
-
-SSH 세션을 닫거나 라즈베리파이가 재부팅되어도 웹서버가 중단되지 않도록 **PM2**를 사용합니다.
+## 🔄 라즈베리파이 PM2 프로세스 관리 명령어
 
 ```bash
-# 1. PM2로 최초 실행 등록 (포트 3000, 외부 IP 수신 허용)
-pm2 start npm --name "jdesign" -- start -- -H 0.0.0.0 -p 3000
-
-# 2. 라즈베리파이 재부팅 시 자동 실행 설정 저장
-pm2 startup
-pm2 save
-
-# --- 유용한 PM2 관리 명령어 ---
-pm2 list             # 현재 구동 중인 프로세스 목록 및 상태 확인
+pm2 list             # 현재 구동 중인 서버 상태 확인
 pm2 logs jdesign     # 실시간 서버 로그 확인
 pm2 restart jdesign  # 서버 재시작
 pm2 stop jdesign     # 서버 일시 중지
+pm2 delete jdesign   # 등록된 프로세스 삭제
 ```
 
 ---
