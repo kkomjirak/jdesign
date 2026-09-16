@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import portfolioData from "../../../../public/images/portfolio/portfolio_data.json";
 import DetailGalleryView, { DetailImageMeta } from "@/components/portfolio/DetailGalleryView";
+import { getAssetPath } from "@/lib/basePath";
 
 interface PortfolioItem {
   id: string;
@@ -122,7 +123,7 @@ export default async function PortfolioDetailPage({
         {/* Main Product Thumbnail Display */}
         <div className="w-full max-w-[768px] mx-auto aspect-square rounded-[5px] overflow-hidden flex items-center justify-center bg-[#ffffff]">
           <img
-            src={project.image}
+            src={getAssetPath(project.image)}
             alt={project.title}
             className="w-full h-full object-contain bg-[#ffffff] rounded-[5px]"
           />

@@ -6,6 +6,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 import ThemeToggle from "@/components/common/ThemeToggle";
+import { getAssetPath } from "@/lib/basePath";
 
 const navItems = [
   { name: "About Us", href: "/about" },
@@ -67,13 +68,13 @@ export default function GNB() {
           <Link href="/" className="transition-opacity hover:opacity-70 z-50 relative flex items-center" aria-label="홈">
             {/* Light mode logo */}
             <img 
-              src="/logo.png" 
+              src={getAssetPath("/logo.png")} 
               alt="jiD design studio" 
               className="dark:hidden h-7 md:h-8 w-auto object-contain"
             />
             {/* Dark mode logo */}
             <img 
-              src="/logo_dark.png" 
+              src={getAssetPath("/logo_dark.png")} 
               alt="jiD design studio" 
               className="hidden dark:block h-7 md:h-8 w-auto object-contain"
             />

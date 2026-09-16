@@ -84,11 +84,23 @@ pm2 restart jdesign
 
 ---
 
-### 💡 (선택사항) GitHub에도 함께 저장/백업할 때
+---
+
+## 🌐 GitHub Pages 배포 가이드 (GitHub Actions 자동 배포)
+
+`main` 브랜치에 코드를 `git push`하면 GitHub Actions 워크플로우(`.github/workflows/deploy.yml`)가 동작하여 자동으로 정적 사이트를 빌드하고 GitHub Pages로 배포합니다.
+
+### ⚙️ GitHub 저장소 필수 설정 (최초 1회)
+1. 저장소 설정 페이지 접속: [GitHub Pages Settings](https://github.com/kkomjirak/jdesign/settings/pages)
+2. **Build and deployment** ➔ **Source** 항목을 **`GitHub Actions`**로 선택
+3. 코드를 푸시하면 Actions 탭에서 빌드/배포가 자동으로 시작됩니다.
+4. 배포 완료 주소: **https://kkomjirak.github.io/jdesign/**
+
+### 💡 GitHub에 푸시하여 자동 배포 실행하기
 ```bash
 cd /Volumes/Hagibis/Works/AI/Orca/jdesign
 git add .
-git commit -m "Update: 포트폴리오 디자인 및 콘텐츠 업데이트"
+git commit -m "Deploy: GitHub Actions 기반 GitHub Pages 자동 배포 설정"
 git push origin main
 ```
 

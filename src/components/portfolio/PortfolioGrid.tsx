@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap";
 import Link from "next/link";
+import { getAssetPath } from "@/lib/basePath";
 
 import portfolioData from "../../../public/images/portfolio/portfolio_data.json";
 
@@ -98,7 +99,7 @@ export default function PortfolioGrid() {
               {/* 상단 이미지 카드 (테두리 제거, 5px radius, white 배경) */}
               <div className="w-full aspect-square rounded-[5px] overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.02] bg-[#ffffff]">
                 <img 
-                  src={product.image} 
+                  src={getAssetPath(product.image)} 
                   alt={product.title} 
                   className="w-full h-full object-contain bg-[#ffffff] rounded-[5px]"
                 />

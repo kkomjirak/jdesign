@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap";
+import { getAssetPath } from "@/lib/basePath";
 
 const promos = [
   {
@@ -91,7 +92,7 @@ export default function PromoGrid() {
               {/* 상품 이미지 */}
               <div className="absolute inset-0 z-0 bg-[#F5F5F7]">
                 <img 
-                  src={promo.image} 
+                  src={getAssetPath(promo.image)} 
                   alt={promo.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" 
                 />

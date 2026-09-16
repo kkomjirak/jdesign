@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getAssetPath } from "@/lib/basePath";
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -16,12 +17,12 @@ export default function Footer() {
           <div className="flex flex-col gap-2">
             <Link href="/" className="flex items-center gap-2">
               <img
-                src="/logo.png"
+                src={getAssetPath("/logo.png")}
                 alt="jiD design studio"
                 className="dark:hidden h-6 w-auto object-contain"
               />
               <img
-                src="/logo_dark.png"
+                src={getAssetPath("/logo_dark.png")}
                 alt="jiD design studio"
                 className="hidden dark:block h-6 w-auto object-contain"
               />

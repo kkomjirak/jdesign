@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { sendContactEmail, ContactFormData } from "@/app/actions/contact";
+import { useState } from "react";
+import {
+  ContactFormData,
+  createMailtoLink,
+  formatContactContent,
+  CONTACT_RECEIVER_EMAIL,
+} from "@/app/actions/contact";
 
 const projectTypes = [
   "Product",
@@ -16,7 +21,6 @@ const budgetRanges = [
 ];
 
 export default function ContactForm() {
-  const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -26,8 +30,8 @@ export default function ContactForm() {
     selectedBudget: "",
   });
 
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "success">("idle");
+  const [copyFeedback, setCopyFeedback] = useState("");
 
   const toggleProjectType = (type: string) => {
     setFormData((prev) => ({
@@ -45,26 +49,27 @@ export default function ContactForm() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("submitting");
-    setErrorMessage("");
+    const mailtoUrl = createMailtoLink(formData);
+    // Open system email client
+    window.location.href = mailtoUrl;
+    setStatus("success");
+  };
 
-    try {
-      startTransition(async () => {
-        const result = await sendContactEmail(formData);
+  const handleCopyContent = () => {
+    const formatted = formatContactContent(formData);
+    navigator.clipboard.writeText(formatted).then(() => {
+      setCopyFeedback("문의 내용이 클립보드에 복사되었습니다!");
+      setTimeout(() => setCopyFeedback(""), 3000);
+    });
+  };
 
-        if (result.success) {
-          setStatus("success");
-        } else {
-          setStatus("error");
-          setErrorMessage(result.error || "메시지 전송에 실패했습니다. 이메일(yoksk7@naver.com)로 직접 문의해 주세요.");
-        }
-      });
-    } catch (err) {
-      setStatus("error");
-      setErrorMessage("서버 통신 중 오류가 발생했습니다.");
-    }
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(CONTACT_RECEIVER_EMAIL).then(() => {
+      setCopyFeedback("이메일 주소(yoksk7@naver.com)가 복사되었습니다!");
+      setTimeout(() => setCopyFeedback(""), 3000);
+    });
   };
 
   return (
@@ -77,7 +82,7 @@ export default function ContactForm() {
       </p>
 
       {status === "success" ? (
-        <div className="py-16 text-center flex flex-col items-center justify-center">
+        <div className="py-12 text-center flex flex-col items-center justify-center">
           <div className="w-16 h-16 bg-[#0066CC]/10 text-[#0066CC] rounded-full flex items-center justify-center mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -93,11 +98,42 @@ export default function ContactForm() {
             </svg>
           </div>
           <h4 className="text-xl font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
-            문의가 성공적으로 전달되었습니다!
+            이메일 프로그램이 연결되었습니다!
           </h4>
           <p className="text-sm text-[#1D1D1F]/70 dark:text-[#F5F5F7]/70 mt-2 max-w-md">
-            소중한 정보 감사드리며, 담당자가 내용을 확인한 후 24시간 이내에 입력해주신 이메일로 연락을 드리겠습니다.
+            기본 메일 앱에 작성하신 내용이 자동 입력되었습니다. 메일 앱에서 [보내기]를 누르시면 문의가 전달됩니다.
           </p>
+
+          <div className="mt-6 p-5 rounded-[5px] bg-[#F2F2F7] dark:bg-[#252528] text-xs text-[#1D1D1F]/80 dark:text-[#F5F5F7]/80 max-w-md w-full text-left space-y-3">
+            <p className="font-semibold text-center text-[#1D1D1F] dark:text-[#F5F5F7]">
+              💡 메일 앱이 자동으로 열리지 않으셨나요?
+            </p>
+            <p className="text-center text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60">
+              아래 버튼으로 문의 내용을 복사하거나 이메일 주소로 직접 발송해 주세요.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleCopyContent}
+                className="flex-1 py-2.5 px-3 rounded-[5px] bg-[#0066CC] text-white font-medium text-center hover:bg-[#0055B3] transition-colors cursor-pointer"
+              >
+                문의 내용 복사하기
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyEmail}
+                className="flex-1 py-2.5 px-3 rounded-[5px] bg-white dark:bg-[#1C1C1E] border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 text-[#1D1D1F] dark:text-[#F5F5F7] font-medium text-center hover:border-[#0066CC] transition-colors cursor-pointer"
+              >
+                이메일 주소 복사
+              </button>
+            </div>
+            {copyFeedback && (
+              <p className="text-center text-[#0066CC] font-semibold text-xs animate-in fade-in pt-1">
+                ✓ {copyFeedback}
+              </p>
+            )}
+          </div>
+
           <button
             onClick={() => {
               setStatus("idle");
@@ -110,7 +146,7 @@ export default function ContactForm() {
                 selectedBudget: "",
               });
             }}
-            className="mt-8 px-6 py-2.5 rounded-[5px] bg-[#1D1D1F] text-white dark:bg-white dark:text-black text-xs font-medium hover:opacity-90 transition-opacity"
+            className="mt-8 px-6 py-2.5 rounded-[5px] bg-[#1D1D1F] text-white dark:bg-white dark:text-black text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer"
           >
             새 문의 작성하기
           </button>
@@ -214,7 +250,7 @@ export default function ContactForm() {
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              placeholder="jidesign (선택사항)"
+              placeholder="jiD design (선택사항)"
               className="w-full px-4 py-3 rounded-[5px] bg-[#F2F2F7] dark:bg-[#252528] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#1D1D1F]/40 dark:placeholder-white/40 text-sm border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC]/60 dark:hover:border-[#0066CC]/70 focus:outline-none focus:border-[#0066CC] focus:bg-white dark:focus:bg-[#1C1C1E] focus:ring-2 focus:ring-[#0066CC]/20 transition-all"
             />
           </div>
@@ -242,43 +278,12 @@ export default function ContactForm() {
             </div>
           </div>
 
-          {/* Error Banner */}
-          {status === "error" && (
-            <div className="p-4 rounded-[5px] bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs leading-relaxed">
-              <p className="font-semibold">⚠️ 이메일 전송 안내</p>
-              <p className="mt-1">{errorMessage}</p>
-            </div>
-          )}
-
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={status === "submitting" || isPending}
-            className="w-full py-4 rounded-[5px] bg-[#0066CC] hover:bg-[#0055B3] text-white font-medium text-base tracking-tight transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full py-4 rounded-[5px] bg-[#0066CC] hover:bg-[#0055B3] text-white font-medium text-base tracking-tight transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
           >
-            {status === "submitting" || isPending ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>전송 중...</span>
-              </>
-            ) : (
-              <span>문의 보내기</span>
-            )}
+            <span>이메일로 문의 보내기 ➔</span>
           </button>
         </form>
       )}

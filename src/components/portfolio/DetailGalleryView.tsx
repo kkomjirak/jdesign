@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAssetPath } from "@/lib/basePath";
 
 export interface DetailImageMeta {
   src: string;
@@ -105,7 +106,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
                     className="group relative w-full rounded-[5px] overflow-hidden flex items-center justify-center cursor-pointer bg-[#ffffff]"
                   >
                     <img
-                      src={img.src}
+                      src={getAssetPath(img.src)}
                       alt={`${projectTitle} 상세 이미지`}
                       className="w-full h-auto object-contain rounded-[5px] transition-transform duration-500 group-hover:scale-[1.01] bg-[#ffffff]"
                       loading="lazy"
@@ -125,7 +126,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
               className="group relative w-full rounded-[5px] overflow-hidden flex items-center justify-center cursor-pointer bg-[#ffffff]"
             >
               <img
-                src={singleImg.src}
+                src={getAssetPath(singleImg.src)}
                 alt={`${projectTitle} 상세 이미지`}
                 className="w-full h-auto object-contain rounded-[5px] transition-transform duration-500 group-hover:scale-[1.01] bg-[#ffffff]"
                 loading="lazy"
@@ -189,7 +190,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={images[activeModalIndex].src}
+              src={getAssetPath(images[activeModalIndex].src)}
               alt={`${projectTitle} 상세 확대 시안`}
               className="max-w-full max-h-[82vh] object-contain rounded-[5px] shadow-2xl bg-[#ffffff]"
             />
