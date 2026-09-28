@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import portfolioData from "../../../../public/images/portfolio/portfolio_data.json";
 import DetailGalleryView, { DetailImageMeta } from "@/components/portfolio/DetailGalleryView";
+import Model3DViewer from "@/components/portfolio/Model3DViewer";
 import { getAssetPath } from "@/lib/basePath";
 
 interface PortfolioItem {
@@ -13,6 +14,15 @@ interface PortfolioItem {
   category: string;
   image: string;
   description?: string;
+}
+
+function getProjectModelPath(folderName: string): string | null {
+  const dirPath = path.join(process.cwd(), "public", "images", "portfolio", folderName);
+  if (!fs.existsSync(dirPath)) return null;
+  const files = fs.readdirSync(dirPath);
+  const glbFile = files.find((f) => !f.startsWith(".") && /\.glb$/i.test(f));
+  if (!glbFile) return null;
+  return `/images/portfolio/${folderName}/${glbFile}`;
 }
 
 function getPngDimensions(filePath: string): { width: number; height: number } | null {
@@ -91,6 +101,7 @@ export default async function PortfolioDetailPage({
 
   const folderName = project.folder || project.id;
   const detailImages = getProjectDetailImages(folderName);
+  const modelPath = getProjectModelPath(folderName);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-[#111111] transition-colors duration-300 py-12 md:py-20 px-4 md:px-8">
@@ -131,6 +142,11 @@ export default async function PortfolioDetailPage({
 
         {/* Detail Images Showcase */}
         <DetailGalleryView images={detailImages} projectTitle={project.title} />
+
+        {/* 3D Interactive Model Showcase (Option B) */}
+        {modelPath && (
+          <Model3DViewer modelUrl={modelPath} projectTitle={project.title} />
+        )}
 
         {/* CTA Banner */}
         <div className="mt-16 md:mt-24 p-8 md:p-12 rounded-[5px] bg-white dark:bg-[#1C1C1E] border border-[#1D1D1F]/5 dark:border-white/10 text-center flex flex-col items-center justify-center gap-4 shadow-sm">
