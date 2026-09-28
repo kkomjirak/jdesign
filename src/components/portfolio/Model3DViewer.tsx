@@ -23,11 +23,18 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const userDisabledAutoRotateRef = useRef(false);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Toggle Auto Rotate
   const toggleAutoRotate = () => {
     if (controlsRef.current) {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
       const nextState = !isAutoRotating;
+      userDisabledAutoRotateRef.current = !nextState;
       controlsRef.current.autoRotate = nextState;
       setIsAutoRotating(nextState);
     }
@@ -36,8 +43,16 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
   // Reset Camera View
   const resetCamera = useCallback(() => {
     if (controlsRef.current && cameraRef.current) {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
       cameraRef.current.position.copy(initialCamPosRef.current);
       controlsRef.current.target.set(0, 0, 0);
+      if (!userDisabledAutoRotateRef.current) {
+        controlsRef.current.autoRotate = true;
+        setIsAutoRotating(true);
+      }
       controlsRef.current.update();
     }
   }, []);
@@ -98,16 +113,36 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
     controlsRef.current = controls;
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.2;
+    controls.autoRotate = !userDisabledAutoRotateRef.current;
+    controls.autoRotateSpeed = 1.8;
     controls.maxPolarAngle = Math.PI / 2 + 0.25; // 약간 아래까지만 허용
 
-    // 사용자가 마우스/터치 시작 시 자동 회전 중단
+    // 사용자가 마우스/터치로 직접 조작 시 일시 정지 및 손을 떼었을 때 자동 회전 복구
     const handleStart = () => {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
       controls.autoRotate = false;
-      setIsAutoRotating(false);
     };
+
+    const handleEnd = () => {
+      // 사용자가 버튼으로 명시적으로 끈 상태가 아니면 인터랙션 종료 후 1.5초 뒤 자동 회전 재개
+      if (!userDisabledAutoRotateRef.current) {
+        if (resumeTimeoutRef.current) {
+          clearTimeout(resumeTimeoutRef.current);
+        }
+        resumeTimeoutRef.current = setTimeout(() => {
+          if (!userDisabledAutoRotateRef.current && controlsRef.current) {
+            controlsRef.current.autoRotate = true;
+            setIsAutoRotating(true);
+          }
+        }, 1500);
+      }
+    };
+
     controls.addEventListener("start", handleStart);
+    controls.addEventListener("end", handleEnd);
 
     // 5. Lighting (Studio Lighting Setup)
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
@@ -164,6 +199,13 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         controls.target.set(0, 0, 0);
         controls.minDistance = dist * 0.25;
         controls.maxDistance = dist * 3.5;
+
+        // 모델 로딩 완료 후 기본설정으로 자동회전 확실히 활성화
+        if (!userDisabledAutoRotateRef.current) {
+          controls.autoRotate = true;
+          setIsAutoRotating(true);
+        }
+
         controls.update();
 
         setIsLoading(false);
@@ -206,8 +248,13 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
 
     // 9. Cleanup
     return () => {
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
       cancelAnimationFrame(animationFrameId);
       controls.removeEventListener("start", handleStart);
+      controls.removeEventListener("end", handleEnd);
       resizeObserver.disconnect();
 
       if (loadedModel) {
@@ -298,13 +345,14 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
               type="button"
               onClick={toggleAutoRotate}
               title={isAutoRotating ? "자동 회전 멈추기" : "자동 회전 켜기"}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all cursor-pointer shadow-2xs ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all cursor-pointer shadow-2xs ${
                 isAutoRotating
                   ? "bg-[#0066CC] text-white border-[#0066CC]"
                   : "bg-white/85 dark:bg-black/70 text-[#1D1D1F] dark:text-[#F5F5F7] border-[#1D1D1F]/10 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               }`}
             >
-              {isAutoRotating ? "회전 중" : "자동 회전"}
+              <span className="text-[11px]">{isAutoRotating ? "↻" : "▷"}</span>
+              <span>{isAutoRotating ? "자동 회전 중" : "자동 회전"}</span>
             </button>
 
             {/* Reset Camera Button */}
