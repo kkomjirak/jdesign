@@ -67,7 +67,7 @@ export default function ContactForm() {
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(CONTACT_RECEIVER_EMAIL).then(() => {
-      setCopyFeedback("이메일 주소(yoksk7@naver.com)가 복사되었습니다!");
+      setCopyFeedback(`이메일 주소(${CONTACT_RECEIVER_EMAIL})가 복사되었습니다!`);
       setTimeout(() => setCopyFeedback(""), 3000);
     });
   };

@@ -7,7 +7,7 @@ export interface ContactFormData {
   selectedBudget: string;
 }
 
-export const CONTACT_RECEIVER_EMAIL = "yoksk7@naver.com";
+export const CONTACT_RECEIVER_EMAIL = "mail@jid.kr";
 
 export function formatContactContent(data: ContactFormData): string {
   const { name, email, company, message, selectedTypes, selectedBudget } = data;

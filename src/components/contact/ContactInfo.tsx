@@ -1,10 +1,11 @@
 "use client";
-
+ 
 import { useState } from "react";
+import { CONTACT_RECEIVER_EMAIL } from "@/app/actions/contact";
 
 export default function ContactInfo() {
   const [copied, setCopied] = useState(false);
-  const email = "yoksk7@naver.com";
+  const email = CONTACT_RECEIVER_EMAIL;
 
   const copyEmail = () => {
     navigator.clipboard.writeText(email);
