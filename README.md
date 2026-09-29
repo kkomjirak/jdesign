@@ -11,4 +11,4 @@ Apple 감성의 미니멀하고 직관적인 인터랙션을 제공하는 **jiD 
 - **Styling**: Tailwind CSS v4
 - **Typography**: Pretendard Light (300) & SF Pro
 - **Animation**: GSAP 3, `@gsap/react`, ScrollTrigger
-- **Server / Hosting**: Raspberry Pi 3 (Node.js & PM2) / Mac Local
+- **Server / Hosting**: Github
