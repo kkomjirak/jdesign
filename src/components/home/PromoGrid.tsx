@@ -5,36 +5,16 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap";
 import { getAssetPath } from "@/lib/basePath";
 
-const promos = [
-  {
-    id: 1,
-    title: "iPhone 15",
-    subtitle: "새로운 카메라. 새로운 디자인. 새로움이 물씬.",
+import portfolioData from "../../../public/images/portfolio/portfolio_data.json";
+
+const featuredIds = ["jd001", "jd002", "jd003", "jd004_a"];
+const promos = portfolioData
+  .filter((project) => featuredIds.includes(project.id))
+  .map((project) => ({
+    ...project,
+    subtitle: `${project.category} Design`,
     theme: "light",
-    image: "/images/iphone_sample.jpg",
-  },
-  {
-    id: 2,
-    title: "Apple Watch Series 9",
-    subtitle: "보다 똑똑. 보다 또렷. 보다 강력.",
-    theme: "light",
-    image: "/images/watch_sample.jpg",
-  },
-  {
-    id: 3,
-    title: "iPad Pro",
-    subtitle: "가장 얇은 Apple 제품. M4 칩의 엄청난 파워.",
-    theme: "light",
-    image: "/images/ipad_sample.jpg",
-  },
-  {
-    id: 4,
-    title: "MacBook Air",
-    subtitle: "어디서나 가뿐하게. M3 칩.",
-    theme: "light",
-    image: "/images/macbook_sample.jpg",
-  },
-];
+  }));
 
 export default function PromoGrid() {
   const containerRef = useRef<HTMLDivElement>(null);

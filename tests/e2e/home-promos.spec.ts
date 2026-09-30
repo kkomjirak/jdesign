@@ -1,0 +1,19 @@
+import { test, expect } from "@playwright/test";
+import portfolioData from "../../public/images/portfolio/portfolio_data.json";
+
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const featuredIds = ["jd001", "jd002", "jd003", "jd004_a"];
+
+test("home cards show four real portfolio projects with working images", async ({ page }) => {
+  await page.goto(`${basePath}/`);
+  const cards = page.locator("section").filter({ has: page.locator("h2") });
+  await expect(cards.locator("h2")).toHaveCount(4);
+  for (const id of featuredIds) {
+    const project = portfolioData.find((item) => item.id === id)!;
+    await expect(cards.getByRole("heading", { name: project.title, exact: true })).toBeAttached();
+    const image = cards.getByRole("img", { name: project.title, exact: true });
+    await expect(image).toHaveAttribute("src", `${basePath}${project.image}`);
+    await expect.poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
+  }
+  await expect(page.locator('img[src*="_sample.jpg"]')).toHaveCount(0);
+});
