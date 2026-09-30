@@ -15,9 +15,10 @@ async function openInteractiveContact(page: Page) {
 }
 
 // Never contact the provider: even unexpected external requests are blocked.
-test.beforeEach(async ({ context }) => {
+test.beforeEach(async ({ context }, testInfo) => {
+  const siteOrigin = new URL(testInfo.project.use.baseURL ?? "http://localhost:3000").origin;
   await context.route("**/*", async (route) => {
-    if (["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)) {
+    if (new URL(route.request().url()).origin === siteOrigin) {
       await route.continue();
     } else {
       await route.abort();
