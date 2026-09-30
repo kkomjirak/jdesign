@@ -1,7 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const endpoint = "https://formsubmit.co/mail@jid.kr";
 const contactPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/contact/`;
+
+// SSR visibility/network silence alone do not prove React is interactive.
+// Verify a real state transition, then restore the initial form selections.
+async function openInteractiveContact(page: Page) {
+  await page.goto(contactPath, { waitUntil: "networkidle" });
+  const product = page.getByRole("button", { name: "Product", exact: true });
+  await product.click();
+  await expect(product).toHaveAttribute("aria-pressed", "true");
+  await product.click();
+  await expect(product).toHaveAttribute("aria-pressed", "false");
+}
 
 // Never contact the provider: even unexpected external requests are blocked.
 test.beforeEach(async ({ context }) => {
@@ -15,7 +26,8 @@ test.beforeEach(async ({ context }) => {
 });
 
 test("contact submits all fields by native POST with CAPTCHA enabled", async ({ page }) => {
-  await page.goto(contactPath);
+  // Wait for client hydration before filling controlled inputs (not just SSR HTML).
+  await openInteractiveContact(page);
   const form = page.locator("form");
   await expect(form).toHaveAttribute("action", endpoint);
   await expect(form).toHaveAttribute("method", /post/i);
@@ -64,13 +76,31 @@ test("contact submits all fields by native POST with CAPTCHA enabled", async ({ 
   await expect(form).toBeVisible();
 });
 
+test("batched field changes preserve both name and email", async ({ page }) => {
+  await openInteractiveContact(page);
+  const product = page.getByRole("button", { name: "Product", exact: true });
+  await product.click();
+  await expect(product).toHaveAttribute("aria-pressed", "true");
+  await page.evaluate(() => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    for (const [id, value] of [["contact-name", "Batched Name"], ["contact-email", "batch@example.com"]]) {
+      const input = document.getElementById(id)!;
+      setter.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+  await expect(page.getByLabel("성함 / 담당자명", { exact: false })).toHaveValue("Batched Name");
+  await expect(page.getByLabel("이메일 주소", { exact: false })).toHaveValue("batch@example.com");
+});
+
 test("native validation blocks missing required fields, invalid email and missing consent", async ({ page }) => {
   let externalRequests = 0;
   await page.route(endpoint, async (route) => {
     externalRequests += 1;
     await route.abort();
   });
-  await page.goto(contactPath);
+  // Wait for client hydration before filling controlled inputs (not just SSR HTML).
+  await openInteractiveContact(page);
   const submit = page.getByRole("button", { name: "이메일로 문의 보내기" });
   const name = page.getByLabel("성함 / 담당자명", { exact: false });
   const email = page.getByLabel("이메일 주소", { exact: false });
@@ -97,7 +127,8 @@ test("native validation blocks missing required fields, invalid email and missin
 });
 
 test("service toggles and budget changes serialize only current choices", async ({ page }) => {
-  await page.goto(contactPath);
+  // Wait for client hydration before filling controlled inputs (not just SSR HTML).
+  await openInteractiveContact(page);
   await expect(page.getByRole("group", { name: /관심 서비스 분야/ })).toBeVisible();
   await expect(page.getByRole("group", { name: /예상 예산 범위/ })).toBeVisible();
   await expect(page.locator('[name="_honey"]')).toBeHidden();
@@ -115,7 +146,8 @@ test("service toggles and budget changes serialize only current choices", async 
 });
 
 test("manual email fallback contains the draft without claiming a sent message", async ({ page }) => {
-  await page.goto(contactPath);
+  // Wait for client hydration before filling controlled inputs (not just SSR HTML).
+  await openInteractiveContact(page);
   await page.getByLabel("성함 / 담당자명", { exact: false }).fill("테스트");
   await page.getByLabel("프로젝트 설명 및 상세 요청사항", { exact: false }).fill("직접 보낼 내용");
   const mailto = await page.getByRole("link", { name: "메일 앱으로 직접 보내기" }).getAttribute("href");
@@ -137,7 +169,8 @@ for (const fails of [false, true]) {
         } },
       });
     }, fails);
-    await page.goto(contactPath);
+    // Wait for client hydration before filling controlled inputs (not just SSR HTML).
+    await openInteractiveContact(page);
     await page.getByLabel("프로젝트 설명 및 상세 요청사항", { exact: false }).fill("복사할 내용");
     await page.getByRole("button", { name: "문의 내용 복사하기" }).click();
     await expect(page.getByRole("status")).toContainText(fails ? "복사하지 못했습니다" : "문의 내용이 클립보드에 복사되었습니다!");

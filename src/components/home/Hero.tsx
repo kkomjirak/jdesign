@@ -10,56 +10,56 @@ export default function Hero() {
   const mediaRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    if (!containerRef.current || !textRef.current || !mediaRef.current) return;
+    const hero = containerRef.current;
+    const text = textRef.current;
+    const media = mediaRef.current;
+    if (!hero || !text || !media) return;
 
-    // Scroll-jacking 효과: 섹션을 고정(pin)시키고, 스크롤에 따라 텍스트와 미디어 애니메이션 처리
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top", // 컨테이너 상단이 뷰포트 상단에 닿을 때 시작
-        end: "+=120%",    // 뷰포트 높이의 120%만큼 스크롤하는 동안 애니메이션 진행
-        pin: true,        // 컨테이너 화면에 고정
-        scrub: 1,         // 부드러운 스크러빙 (1초 지연으로 부드럽게 따라옴)
-      },
+    const host = hero.parentElement;
+    let hostWidth = host?.clientWidth ?? 0;
+    let resizeFrame = 0;
+    // Mobile ScrollTrigger can ignore small viewport resizes. Observe the real
+    // block width so a pinned inline width cannot create a horizontal overflow.
+    const observer = new ResizeObserver(([entry]) => {
+      const nextWidth = entry.contentRect.width;
+      if (nextWidth === hostWidth) return;
+      hostWidth = nextWidth;
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => ScrollTrigger.refresh());
     });
+    if (host) observer.observe(host);
 
-    // 1. 스크롤 다운 시: 텍스트가 위로 올라가며 페이드 아웃 & 살짝 축소
-    tl.to(textRef.current, {
-      opacity: 0,
-      y: -50,
-      scale: 0.95,
-      duration: 1,
-      ease: "power2.out",
-    }, 0); // 타임라인 시작(0) 시점에 동시 실행
-
-    // 2. 스크롤 다운 시: 제품 미디어가 하단에서 올라오며 확대 (Transform, Opacity만 사용)
-    tl.fromTo(
-      mediaRef.current,
-      {
-        y: "20%",
-        scale: 0.85,
-        opacity: 0.6,
-      },
-      {
-        y: "0%",
-        scale: 1,
-        opacity: 1,
-        duration: 1,
-        ease: "power2.out",
-      },
-      0 // 텍스트 애니메이션과 동시 실행
-    );
-
-    // 컴포넌트 최초 마운트 시 등장 애니메이션 (스크롤과 무관)
-    gsap.fromTo(
-      textRef.current,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 0.3 }
-    );
+    const preferences = gsap.matchMedia();
+    preferences.add("(prefers-reduced-motion: no-preference)", () => {
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: hero,
+          start: "top top+=44",
+          end: "+=120%",
+          pin: true,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+          scrub: 1,
+        },
+      });
+      // One timeline owns each transform: no competing entrance tween.
+      timeline.to(text, { opacity: 0, y: -40, scale: 0.95, duration: 1, ease: "power2.out" }, 0);
+      timeline.fromTo(media,
+        { yPercent: 16, scale: 0.9, opacity: 0.75 },
+        { yPercent: 0, scale: 1, opacity: 1, duration: 1, ease: "power2.out" },
+        0,
+      );
+    });
+    // Reverting also removes the pin spacer on navigation or preference changes.
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(resizeFrame);
+      preferences.revert();
+    };
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative h-screen w-full bg-[#F5F5F7] overflow-hidden flex flex-col items-center justify-center">
+    <section ref={containerRef} className="relative isolate h-[calc(100svh-44px)] w-full bg-[#F5F5F7] overflow-hidden flex flex-col items-center justify-center">
       
       {/* Text Content */}
       <div ref={textRef} className="absolute top-[18%] flex flex-col items-center text-center z-20 w-full px-4">

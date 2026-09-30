@@ -1,85 +1,77 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap";
 import { getAssetPath } from "@/lib/basePath";
 
-import portfolioData from "../../../public/images/portfolio/portfolio_data.json";
+interface FeaturedProject {
+  id: string;
+  title: string;
+  category: string;
+  image: string;
+}
 
-const featuredIds = ["jd001", "jd002", "jd003", "jd004_a"];
-const promos = portfolioData
-  .filter((project) => featuredIds.includes(project.id))
-  .map((project) => ({
-    ...project,
-    subtitle: `${project.category} Design`,
-    theme: "light",
-  }));
-
-export default function PromoGrid() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+export default function PromoGrid({ projects }: { projects: FeaturedProject[] }) {
+  const containerRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useGSAP(() => {
-    if (!containerRef.current) return;
-
-    // 카드가 뷰포트에 나타날 때 위로 부드럽게 페이드인 (ScrollTrigger)
-    cardsRef.current.forEach((card, index) => {
-      if (!card) return;
-      gsap.fromTo(
-        card,
-        { opacity: 0, y: 50 },
-        {
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      cardsRef.current.forEach((card) => {
+        if (!card) return;
+        gsap.fromTo(card, { opacity: 0, y: 40 }, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
+          duration: 0.6,
           ease: "power3.out",
           scrollTrigger: {
             trigger: card,
-            start: "top 85%", // 카드의 상단이 뷰포트의 85% 지점에 도달할 때 시작
+            start: "top 90%",
             toggleActions: "play none none reverse",
           },
-        }
-      );
+        });
+      });
     });
-  }, { scope: containerRef });
+    return () => media.revert();
+  }, { scope: containerRef, dependencies: [projects] });
 
   return (
-    <section ref={containerRef} className="w-full max-w-[1440px] mx-auto px-4 py-4 md:py-8">
+    <section ref={containerRef} aria-label="3D 모델이 있는 대표 프로젝트" className="relative isolate w-full max-w-[1440px] mx-auto px-4 py-4 md:py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {promos.map((promo, index) => {
-          const isDark = promo.theme === "dark";
-          return (
-            <div
-              key={promo.id}
-              ref={(el) => {
-                cardsRef.current[index] = el;
-              }}
-              className={`group relative h-[500px] md:h-[580px] w-full overflow-hidden flex flex-col items-center justify-start pt-12 cursor-pointer ${
-                isDark ? "bg-[#000000]" : "bg-[#F5F5F7]"
-              }`}
-            >
-              {/* Text Content */}
-              <div className="relative z-20 flex flex-col items-center text-center px-6">
-                <h2 className="text-[32px] md:text-[40px] font-semibold tracking-tight text-[#1D1D1F]">
-                  {promo.title}
-                </h2>
-                <p className="text-sm md:text-lg mt-3 font-normal max-w-[80%] text-[#1D1D1F] opacity-90">
-                  {promo.subtitle}
-                </p>
-              </div>
-
-              {/* 상품 이미지 */}
-              <div className="absolute inset-0 z-0 bg-[#F5F5F7]">
-                <img 
-                  src={getAssetPath(promo.image)} 
-                  alt={promo.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" 
-                />
-              </div>
+        {projects.map((project, index) => (
+          <Link
+            key={project.id}
+            href={`/portfolio/${project.id}/`}
+            aria-label={`${project.title} 3D 모델 보기`}
+            ref={(element) => { cardsRef.current[index] = element; }}
+            className="group relative h-[500px] md:h-[580px] overflow-hidden rounded-[5px] bg-[#F5F5F7] dark:bg-[#1C1C1E] flex flex-col items-center pt-10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0066CC]"
+          >
+            <div className="relative z-10 flex flex-col items-center text-center px-6">
+              <h2 className="text-[28px] md:text-[36px] font-semibold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+                {project.title}
+              </h2>
+              <p className="text-sm md:text-lg mt-2 text-[#1D1D1F]/70 dark:text-[#F5F5F7]/70">
+                {project.category} Design
+              </p>
             </div>
-          );
-        })}
+            <div className="absolute top-[150px] bottom-[72px] left-4 right-4 md:left-6 md:right-6">
+              <Image
+                src={getAssetPath(project.image)}
+                alt={project.title}
+                fill
+                sizes="(min-width: 1440px) 660px, (min-width: 768px) 50vw, 100vw"
+                className="object-contain transition-transform duration-700 group-hover:scale-[1.03] motion-reduce:transition-none"
+              />
+            </div>
+            <span className="absolute bottom-6 text-sm font-medium text-[#0066CC] dark:text-[#66B2FF]">
+              3D 모델 보기 <span aria-hidden="true">↗</span>
+            </span>
+          </Link>
+        ))}
       </div>
     </section>
   );

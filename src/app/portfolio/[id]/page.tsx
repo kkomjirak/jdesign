@@ -6,6 +6,7 @@ import portfolioData from "../../../../public/images/portfolio/portfolio_data.js
 import DetailGalleryView, { DetailImageMeta } from "@/components/portfolio/DetailGalleryView";
 import Model3DViewer from "@/components/portfolio/Model3DViewer";
 import { getAssetPath } from "@/lib/basePath";
+import { getProjectModelPath } from "@/lib/portfolioModels";
 
 interface PortfolioItem {
   id: string;
@@ -14,15 +15,6 @@ interface PortfolioItem {
   category: string;
   image: string;
   description?: string;
-}
-
-function getProjectModelPath(folderName: string): string | null {
-  const dirPath = path.join(process.cwd(), "public", "images", "portfolio", folderName);
-  if (!fs.existsSync(dirPath)) return null;
-  const files = fs.readdirSync(dirPath);
-  const glbFile = files.find((f) => !f.startsWith(".") && /\.glb$/i.test(f));
-  if (!glbFile) return null;
-  return `/images/portfolio/${folderName}/${glbFile}`;
 }
 
 function getPngDimensions(filePath: string): { width: number; height: number } | null {

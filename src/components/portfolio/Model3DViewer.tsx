@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getAssetPath } from "@/lib/basePath";
+import { disposeModel } from "@/lib/modelViewerResources";
+import { getRenderableModelBounds } from "@/lib/modelViewerBounds";
 
 interface Model3DViewerProps {
   modelUrl: string;
@@ -25,6 +27,9 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
   const [isFullscreen, setIsFullscreen] = useState(false);
   const userDisabledAutoRotateRef = useRef(false);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [visibleModelUrl, setVisibleModelUrl] = useState<string | null>(null);
+  const isVisibleRef = useRef(false);
+  const resumeRenderingRef = useRef<(() => void) | null>(null);
 
   // Toggle Auto Rotate
   const toggleAutoRotate = () => {
@@ -58,14 +63,18 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
   }, []);
 
   // Toggle Fullscreen
-  const toggleFullscreen = () => {
-    if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
+  const toggleFullscreen = async () => {
+    const container = containerRef.current;
+    if (!container) return;
+    try {
+      if (!document.fullscreenElement) {
+        await container.requestFullscreen?.();
+      } else {
+        await document.exitFullscreen?.();
+      }
+    } catch {
+      // Fullscreen may be unsupported or denied by browser policy.
+      // fullscreenchange, not a requested transition, owns the button state.
     }
   };
 
@@ -80,11 +89,30 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    // Keep an initialized viewer when it leaves the viewport; do not re-download.
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisibleRef.current = entry.isIntersecting;
+      if (entry.isIntersecting) {
+        if (visibleModelUrl !== modelUrl) {
+          setIsLoading(true);
+          setLoadProgress(0);
+          setLoadedMB(null);
+          setLoadError(null);
+          setVisibleModelUrl(modelUrl);
+        }
+        resumeRenderingRef.current?.();
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [modelUrl, visibleModelUrl]);
 
-    let animationFrameId: number;
-    setIsLoading(true);
-    setLoadProgress(0);
-    setLoadError(null);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || visibleModelUrl !== modelUrl) return;
+
+    let animationFrameId: number | null = null;
+    let disposed = false;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -96,11 +124,23 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
     cameraRef.current = camera;
 
     // 3. Renderer
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+    } catch {
+      cameraRef.current = null;
+      // Publish the browser capability result asynchronously; ignore it on unmount.
+      queueMicrotask(() => {
+        if (disposed) return;
+        setLoadError("이 브라우저에서는 3D 모델을 표시할 수 없습니다.");
+        setIsLoading(false);
+      });
+      return () => { disposed = true; };
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -169,10 +209,21 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
     loader.load(
       assetUrl,
       (gltf) => {
+        if (disposed) {
+          disposeModel(gltf.scene);
+          return;
+        }
         loadedModel = gltf.scene;
 
         // Auto Center and Scale calculation
-        const box = new THREE.Box3().setFromObject(loadedModel);
+        const box = getRenderableModelBounds(loadedModel);
+        if (box.isEmpty()) {
+          disposeModel(loadedModel);
+          loadedModel = null;
+          setLoadError("3D 모델에 표시할 수 있는 제품 형상이 없습니다.");
+          setIsLoading(false);
+          return;
+        }
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -209,8 +260,10 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         controls.update();
 
         setIsLoading(false);
+        resumeRendering();
       },
       (xhr) => {
+        if (disposed) return;
         if (xhr.total > 0) {
           const pct = Math.round((xhr.loaded / xhr.total) * 100);
           setLoadProgress(pct);
@@ -218,8 +271,8 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
           setLoadedMB((xhr.loaded / (1024 * 1024)).toFixed(1));
         }
       },
-      (error) => {
-        console.error("Error loading 3D model:", error);
+      () => {
+        if (disposed) return;
         setLoadError("3D 모델을 불러오는 중 오류가 발생했습니다.");
         setIsLoading(false);
       }
@@ -240,35 +293,41 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
 
     // 8. Animation Loop
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameId = null;
+      if (disposed || !loadedModel || !isVisibleRef.current || document.hidden) return;
       controls.update();
       renderer.render(scene, camera);
+      animationFrameId = requestAnimationFrame(animate);
     };
+    const resumeRendering = () => {
+      if (!disposed && loadedModel && animationFrameId === null && isVisibleRef.current && !document.hidden) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    resumeRenderingRef.current = resumeRendering;
+    document.addEventListener("visibilitychange", resumeRendering);
     animate();
 
     // 9. Cleanup
     return () => {
+      disposed = true;
       if (resumeTimeoutRef.current) {
         clearTimeout(resumeTimeoutRef.current);
         resumeTimeoutRef.current = null;
       }
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+      resumeRenderingRef.current = null;
+      document.removeEventListener("visibilitychange", resumeRendering);
       controls.removeEventListener("start", handleStart);
       controls.removeEventListener("end", handleEnd);
+      controls.dispose();
+      controlsRef.current = null;
+      cameraRef.current = null;
       resizeObserver.disconnect();
 
       if (loadedModel) {
         scene.remove(loadedModel);
-        loadedModel.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry?.dispose();
-            if (Array.isArray(child.material)) {
-              child.material.forEach((m) => m.dispose());
-            } else if (child.material) {
-              child.material.dispose();
-            }
-          }
-        });
+        disposeModel(loadedModel);
       }
 
       renderer.dispose();
@@ -276,10 +335,13 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         container.removeChild(renderer.domElement);
       }
     };
-  }, [modelUrl]);
+  }, [modelUrl, visibleModelUrl]);
+
+  const viewerLoading = isLoading || visibleModelUrl !== modelUrl;
+  const viewerError = visibleModelUrl === modelUrl ? loadError : null;
 
   return (
-    <div className="w-full mt-16 md:mt-24">
+    <section aria-label={`${projectTitle} 3D 모델`} data-state={viewerError ? "error" : viewerLoading ? "loading" : "ready"} aria-busy={viewerLoading} className="w-full mt-16 md:mt-24">
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-8 md:mb-12 pt-10 border-t border-[#1D1D1F]/10 dark:border-[#F5F5F7]/10">
         <span className="text-xs font-semibold uppercase tracking-wider text-[#0066CC] mb-1">
@@ -289,7 +351,8 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
           3D 모델링 뷰어
         </h2>
         <p className="mt-2 text-xs md:text-sm text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60">
-          마우스 드래그 또는 터치로 제품을 360° 자유롭게 회전하고 확대해 살펴보실 수 있습니다.
+          <span className="hidden sm:inline">마우스 드래그 또는 터치로 제품을 360° 자유롭게 회전하고 확대해 살펴보실 수 있습니다.</span>
+          <span className="sm:hidden">터치 드래그로 회전하고, 핀치로 확대해 살펴보실 수 있습니다.</span>
         </p>
       </div>
 
@@ -300,8 +363,8 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
         {/* Loading Overlay */}
-        {isLoading && !loadError && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-md transition-opacity duration-300">
+        {viewerLoading && !viewerError && (
+          <div role="status" className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-md transition-opacity duration-300">
             <div className="w-12 h-12 border-3 border-[#0066CC]/20 border-t-[#0066CC] rounded-full animate-spin mb-4" />
             <p className="text-sm font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
               3D 모델 데이터를 불러오는 중...
@@ -321,31 +384,32 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         )}
 
         {/* Error Overlay */}
-        {loadError && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-white/90 dark:bg-[#1C1C1E]/90">
+        {viewerError && (
+          <div role="alert" className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-white/90 dark:bg-[#1C1C1E]/90">
             <span className="text-3xl mb-2">⚠️</span>
-            <p className="text-sm font-medium text-red-500 mb-1">{loadError}</p>
+            <p className="text-sm font-medium text-red-500 mb-1">{viewerError}</p>
             <p className="text-xs text-[#1D1D1F]/50 dark:text-[#F5F5F7]/50">
-              파일을 불러오는 과정에 일시적인 지연이 발생했습니다.
+              위의 제품 이미지에서 디자인을 확인하실 수 있습니다.
             </p>
           </div>
         )}
 
         {/* Top Floating Guide & Controls */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 dark:bg-black/70 backdrop-blur-md border border-[#1D1D1F]/5 dark:border-white/10 text-[11px] text-[#1D1D1F]/80 dark:text-[#F5F5F7]/80 shadow-2xs">
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-end sm:justify-between pointer-events-none z-10">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 dark:bg-black/70 backdrop-blur-md border border-[#1D1D1F]/5 dark:border-white/10 text-[11px] text-[#1D1D1F]/80 dark:text-[#F5F5F7]/80 shadow-2xs">
             <span>🖱️</span>
-            <span className="hidden sm:inline">좌클릭 드래그: 회전 | 휠: 줌</span>
-            <span className="sm:hidden">터치 드래그: 회전 | 핀치: 줌</span>
+            <span>좌클릭 드래그: 회전 | 휠: 줌</span>
           </div>
 
-          <div className="flex items-center gap-1.5 pointer-events-auto">
+          <div className="flex items-center gap-1.5 pointer-events-auto whitespace-nowrap">
             {/* Auto Rotate Toggle */}
             <button
               type="button"
               onClick={toggleAutoRotate}
+              disabled={viewerLoading || !!viewerError}
+              aria-pressed={isAutoRotating}
               title={isAutoRotating ? "자동 회전 멈추기" : "자동 회전 켜기"}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all cursor-pointer shadow-2xs ${
+              className={`min-h-11 sm:min-h-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all cursor-pointer shadow-2xs ${
                 isAutoRotating
                   ? "bg-[#0066CC] text-white border-[#0066CC]"
                   : "bg-white/85 dark:bg-black/70 text-[#1D1D1F] dark:text-[#F5F5F7] border-[#1D1D1F]/10 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -359,8 +423,9 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
             <button
               type="button"
               onClick={resetCamera}
+              disabled={viewerLoading || !!viewerError}
               title="원래 시점으로 초기화"
-              className="p-1.5 px-3 rounded-full text-xs font-medium bg-white/85 dark:bg-black/70 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1D1D1F] dark:text-[#F5F5F7] backdrop-blur-md border border-[#1D1D1F]/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+              className="min-h-11 sm:min-h-0 p-1.5 px-3 rounded-full text-xs font-medium bg-white/85 dark:bg-black/70 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1D1D1F] dark:text-[#F5F5F7] backdrop-blur-md border border-[#1D1D1F]/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
             >
               시점 리셋
             </button>
@@ -369,8 +434,10 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
             <button
               type="button"
               onClick={toggleFullscreen}
+              disabled={viewerLoading || !!viewerError}
+              aria-pressed={isFullscreen}
               title={isFullscreen ? "전체화면 종료" : "전체화면으로 보기"}
-              className="p-1.5 px-2.5 rounded-full text-xs font-medium bg-white/85 dark:bg-black/70 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1D1D1F] dark:text-[#F5F5F7] backdrop-blur-md border border-[#1D1D1F]/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+              className="min-h-11 sm:min-h-0 p-1.5 px-2.5 rounded-full text-xs font-medium bg-white/85 dark:bg-black/70 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1D1D1F] dark:text-[#F5F5F7] backdrop-blur-md border border-[#1D1D1F]/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
             >
               {isFullscreen ? "축소" : "전체화면"}
             </button>
@@ -385,6 +452,6 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         </div>
 
       </div>
-    </div>
+    </section>
   );
 }
