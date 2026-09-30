@@ -15,6 +15,7 @@
 - `home-promos.spec.ts` and `home-scroll.spec.ts` cover selected cards, pinning/release, reverse scroll, responsive resizes, and reduced-motion changes.
 
 ## 3D viewer
+- Keep the canvas free of a project-title/file-format badge (`projectTitle • GLB`). The main project title, accessible viewer name, gesture guidance and controls remain; `model-captions.spec.ts` checks all 7 model routes.
 - Preserve source GLBs. Frame only visible mesh geometry with renderable materials. `jd006` contains alpha-zero helper parts that inflated the original camera bounds; uniform file scaling cannot fix auto-fit. `modelViewerBounds.ts` excludes fully transparent/hidden parts before centering and fitting.
 - Model discovery prefers the exact folder-name GLB, skips hidden/backup candidates, then uses a sorted fallback. Discovery runs only during static generation.
 - Lazy-load on viewport intersection; pause drawing offscreen/hidden, preserve the loaded scene, guard late callbacks, and dispose OrbitControls, shared GPU resources, and decoded image bitmaps on unmount.

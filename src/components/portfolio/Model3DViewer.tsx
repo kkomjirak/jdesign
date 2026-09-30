@@ -444,13 +444,6 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
           </div>
         </div>
 
-        {/* Bottom Model Name Tag */}
-        <div className="absolute bottom-4 left-4 pointer-events-none z-10">
-          <span className="px-3 py-1 rounded-md text-[11px] font-mono text-[#1D1D1F]/50 dark:text-[#F5F5F7]/50 bg-white/60 dark:bg-black/50 backdrop-blur-xs">
-            {projectTitle} • GLB
-          </span>
-        </div>
-
       </div>
     </section>
   );
