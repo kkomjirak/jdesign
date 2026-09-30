@@ -14,3 +14,5 @@ Apple 감성의 미니멀하고 직관적인 인터랙션을 제공하는 **jiD 
 - **3D Graphics**: Three.js
 - **Server / Hosting**: Github
 - **Form Service**: FormSubmit
+---
+## 🔗 접속주소 : https://kkomjirak.github.io/jdesign/
