@@ -30,7 +30,7 @@ for (const motion of ["no-preference", "reduce"] as const) {
     const copy = hero.getByText(tagline, { exact: true });
     await expect(image).toBeVisible();
     await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" ? 0 : 1);
-    for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 320, height: 568 }]) {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 320, height: 568 }, { width: 390, height: 1100 }]) {
       await page.setViewportSize(viewport);
       await page.evaluate(() => window.scrollTo(0, 0));
       await expect.poll(async () => {
@@ -42,6 +42,25 @@ for (const motion of ["no-preference", "reduce"] as const) {
           && imageBox.x + imageBox.width <= heroBox.x + heroBox.width + 1;
       }).toBe(true);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      // Measure the visible alpha bounds, not the full object-contain box:
+      // the source has transparent padding and can be letterboxed on tall phones.
+      await expect.poll(() => image.evaluate((img: HTMLImageElement) => {
+        if (!img.complete || !img.naturalWidth) return Infinity;
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let firstRow = 0;
+        while (firstRow < canvas.height && !Array.from({ length: canvas.width }, (_, x) => pixels[(firstRow * canvas.width + x) * 4 + 3]).some((alpha) => alpha > 0)) firstRow++;
+        const box = img.getBoundingClientRect();
+        const scale = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
+        const position = getComputedStyle(img).objectPosition.split(" ")[1];
+        const letterbox = (box.height - img.naturalHeight * scale) * (position === "0%" || position === "top" ? 0 : 0.5);
+        const copy = img.closest("section")!.querySelector("p")!.getBoundingClientRect();
+        return box.top + letterbox + firstRow * scale - copy.bottom;
+      })).toBeLessThanOrEqual(viewport.width < 768 ? 64 : 80);
       await hero.screenshot({ path: testInfo.outputPath(`hero-${viewport.width}x${viewport.height}-${motion}.png`) });
     }
   });

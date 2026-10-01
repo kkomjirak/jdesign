@@ -48,7 +48,7 @@ export default function Hero() {
       // One timeline owns each transform: no competing entrance tween.
       timeline.to(text, { opacity: 0, y: -40, scale: 0.95, duration: 1, ease: "power2.out" }, 0);
       timeline.fromTo(media,
-        { yPercent: 6, scale: 0.9, opacity: 0.9 },
+        { yPercent: 0, scale: 0.9, opacity: 0.9 },
         { yPercent: 0, scale: 1, opacity: 1, duration: 1, ease: "power2.out" },
         0,
       );
@@ -62,10 +62,10 @@ export default function Hero() {
   }, { scope: containerRef });
 
   return (
-    <section ref={containerRef} className="relative isolate h-[calc(100svh-44px)] w-full bg-[#F5F5F7] overflow-hidden flex flex-col items-center justify-center">
+    <section ref={containerRef} className={`${styles.hero} relative isolate h-[calc(100svh-44px)] w-full bg-[#F5F5F7] overflow-hidden flex flex-col items-center`}>
       
       {/* Text Content */}
-      <div ref={textRef} className={`${styles.text} absolute top-[10%] md:top-[12%] flex flex-col items-center text-center z-20 w-full px-4`}>
+      <div ref={textRef} className="flex shrink-0 flex-col items-center text-center z-20 w-full px-4">
         <h1 className={`${styles.title} text-[32px] md:text-[56px] font-semibold tracking-[-0.02em] text-[#1D1D1F] leading-tight`}>
           필로포스-검안기
         </h1>
@@ -74,15 +74,15 @@ export default function Hero() {
         </p>
       </div>
 
-      {/* Keep the complete transparent product render visible during the scroll transform. */}
-      <div ref={mediaRef} className="absolute bottom-[6%] w-full max-w-[1024px] h-[62%] z-10">
+      {/* Flow directly below the copy; top-align the portrait render without letterbox gaps. */}
+      <div ref={mediaRef} className={`${styles.media} relative w-full max-w-[1024px] min-h-0 flex-1 z-10`}>
         <Image
           src={getAssetPath("/images/home/philophos-optometry.png")}
           alt="필로포스-검안기 제품 이미지"
           fill
           sizes="(max-width: 767px) 100vw, 1024px"
           preload
-          className="object-contain"
+          className="object-contain object-top"
         />
       </div>
     </section>

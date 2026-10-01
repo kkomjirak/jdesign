@@ -8,7 +8,7 @@
 
 ## Home projects and scroll layout
 - Hero uses the supplied transparent Philophos PNG (`public/images/home/philophos-optometry.png`), title `필로포스-검안기`, and tagline `편안한 검안 경험을 위한 정제된 디자인.` Keep the complete portrait render uncropped with `object-contain` and a base-path-safe, preloaded Next Image; no product-media placeholder or phone copy remains.
-- Keep bottom clearance for the media's GSAP translation. `Hero.module.css` compacts text on short screens; `home-hero.spec.ts` checks exact supplied image bytes, copy, motion preferences, portrait/landscape/desktop geometry and no horizontal overflow.
+- Keep copy and media in normal flex flow with a small responsive gap, top-aligned `object-contain`, and top-origin scale without downward translation. Bottom-anchored media plus centered letterboxing caused excessive gaps on tall phones. `home-hero.spec.ts` checks actual alpha-bound product spacing (not merely the image box), including tall phones, full containment, motion preferences and no horizontal overflow.
 - Home selections are `jd003`, `jd005_a`, `jd026`, and `jd030`; `src/app/page.tsx` checks their matching GLB files at build time and passes only the selected portfolio data to `PromoGrid`.
 - Home cards use thumbnails and link to the interactive detail viewer rather than opening four WebGL contexts or downloading four large models on the homepage.
 - Keep the hero's parent in block flow and explicitly enable GSAP `pinSpacing`. GSAP defaults to no pin spacing when the parent uses `display: flex`, making following cards overlap a pinned hero.

@@ -1,7 +1,19 @@
-/* Reserve space for both text and the complete portrait render on short screens. */
+/* Copy and media share normal flow: tall phones must not push the product down. */
+.hero {
+  padding-top: clamp(32px, 7svh, 80px);
+  padding-bottom: 3svh;
+  gap: clamp(16px, 3svh, 28px);
+}
+
+.media {
+  transform-origin: center top;
+}
+
 @media (max-height: 560px) {
-  .text {
-    top: 8%;
+  .hero {
+    padding-top: 16px;
+    padding-bottom: 12px;
+    gap: 12px;
   }
 
   .title {
