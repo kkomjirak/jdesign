@@ -9,6 +9,19 @@
   transform-origin: center top;
 }
 
+/* Phones use content height and normal scrolling; desktop pinning is unchanged. */
+@media (max-width: 767px) {
+  .hero {
+    height: auto;
+    padding-bottom: 20px;
+  }
+
+  .media {
+    flex: none;
+    aspect-ratio: 732 / 1019;
+  }
+}
+
 @media (max-height: 560px) {
   .hero {
     padding-top: 16px;

@@ -29,9 +29,10 @@ for (const motion of ["no-preference", "reduce"] as const) {
     const image = hero.getByRole("img", { name: "필로포스-검안기 제품 이미지", exact: true });
     const copy = hero.getByText(tagline, { exact: true });
     await expect(image).toBeVisible();
-    await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" ? 0 : 1);
+    await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" || page.viewportSize()!.width < 768 ? 0 : 1);
     for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 320, height: 568 }, { width: 390, height: 1100 }]) {
       await page.setViewportSize(viewport);
+      await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" || viewport.width < 768 ? 0 : 1);
       await page.evaluate(() => window.scrollTo(0, 0));
       await expect.poll(async () => {
         const [heroBox, imageBox, copyBox] = await Promise.all([hero.boundingBox(), image.boundingBox(), copy.boundingBox()]);

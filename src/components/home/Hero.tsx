@@ -33,7 +33,7 @@ export default function Hero() {
     if (host) observer.observe(host);
 
     const preferences = gsap.matchMedia();
-    preferences.add("(prefers-reduced-motion: no-preference)", () => {
+    preferences.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: hero,

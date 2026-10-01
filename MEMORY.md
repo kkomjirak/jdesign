@@ -12,8 +12,9 @@
 - Home selections are `jd003`, `jd005_a`, `jd026`, and `jd030`; `src/app/page.tsx` checks their matching GLB files at build time and passes only the selected portfolio data to `PromoGrid`.
 - Home cards use thumbnails and link to the interactive detail viewer rather than opening four WebGL contexts or downloading four large models on the homepage.
 - Keep the hero's parent in block flow and explicitly enable GSAP `pinSpacing`. GSAP defaults to no pin spacing when the parent uses `display: flex`, making following cards overlap a pinned hero.
-- Use isolated stacking contexts and `100svh` minus the fixed 44px navigation height. Refresh ScrollTrigger when the actual parent width changes; small mobile resizes can otherwise retain a stale pinned inline width and create horizontal overflow.
-- Use `gsap.matchMedia` with the no-reduced-motion query and revert on unmount/preference changes. One timeline owns hero text transforms to avoid competing entrance/scroll tweens.
+- Desktop (>=768px) uses isolated stacking contexts and `100svh` minus the fixed 44px navigation height. Phones use auto/content height, an image-aspect-ratio media box, and normal scrolling without a hero pin spacer; viewport height plus pin duration created a large blank tail below the portrait product. `home-mobile-spacing.spec.ts` caps visible product-bottom-to-project-section spacing on normal/tall/short phones under both motion preferences.
+- Refresh ScrollTrigger when the actual parent width changes; small mobile resizes can otherwise retain a stale pinned inline width and create horizontal overflow.
+- Use `gsap.matchMedia` with `(min-width: 768px) and (prefers-reduced-motion: no-preference)` and revert on unmount/preference/breakpoint changes. One timeline owns hero text transforms to avoid competing entrance/scroll tweens.
 - `home-promos.spec.ts` and `home-scroll.spec.ts` cover selected cards, pinning/release, reverse scroll, responsive resizes, and reduced-motion changes.
 
 ## 3D viewer
