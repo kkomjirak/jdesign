@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
+import { getAssetPath } from "@/lib/basePath";
+import styles from "./Hero.module.css";
 import { useGSAP } from "@gsap/react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 
@@ -45,7 +48,7 @@ export default function Hero() {
       // One timeline owns each transform: no competing entrance tween.
       timeline.to(text, { opacity: 0, y: -40, scale: 0.95, duration: 1, ease: "power2.out" }, 0);
       timeline.fromTo(media,
-        { yPercent: 16, scale: 0.9, opacity: 0.75 },
+        { yPercent: 6, scale: 0.9, opacity: 0.9 },
         { yPercent: 0, scale: 1, opacity: 1, duration: 1, ease: "power2.out" },
         0,
       );
@@ -62,26 +65,25 @@ export default function Hero() {
     <section ref={containerRef} className="relative isolate h-[calc(100svh-44px)] w-full bg-[#F5F5F7] overflow-hidden flex flex-col items-center justify-center">
       
       {/* Text Content */}
-      <div ref={textRef} className="absolute top-[18%] flex flex-col items-center text-center z-20 w-full px-4">
-        <h1 className="text-[32px] md:text-[56px] font-semibold tracking-[-0.02em] text-[#1D1D1F] leading-tight">
-          iPhone 15 Pro
+      <div ref={textRef} className={`${styles.text} absolute top-[10%] md:top-[12%] flex flex-col items-center text-center z-20 w-full px-4`}>
+        <h1 className={`${styles.title} text-[32px] md:text-[56px] font-semibold tracking-[-0.02em] text-[#1D1D1F] leading-tight`}>
+          필로포스-검안기
         </h1>
-        <p className="text-[19px] md:text-[28px] font-normal tracking-[-0.01em] text-[#1D1D1F]/80 mt-2">
-          티타늄. 그토록 견고한. 그토록 가벼운. 그토록 프로.
+        <p className={`${styles.tagline} text-[17px] md:text-[28px] font-normal tracking-[-0.01em] text-[#1D1D1F]/80 mt-2`}>
+          편안한 검안 경험을 위한 정제된 디자인.
         </p>
       </div>
 
-      {/* Product Image/Video Placeholder */}
-      <div ref={mediaRef} className="absolute bottom-0 w-full max-w-[1024px] h-[55%] md:h-[65%] z-10 flex items-end justify-center px-4">
-        {/* Placeholder (Width: 1024, Height: ~600) */}
-        <div className="relative w-full h-full bg-white rounded-t-[5px] overflow-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.05)] border-t border-x border-[#E5E5EA] flex flex-col items-center justify-center">
-           <span className="text-[#1D1D1F]/40 text-sm md:text-lg font-semibold tracking-widest uppercase">
-              Product Media Area
-           </span>
-           <span className="text-[#1D1D1F]/30 text-xs mt-2">
-              (Video / Image Placeholder - 1024 x 600)
-           </span>
-        </div>
+      {/* Keep the complete transparent product render visible during the scroll transform. */}
+      <div ref={mediaRef} className="absolute bottom-[6%] w-full max-w-[1024px] h-[62%] z-10">
+        <Image
+          src={getAssetPath("/images/home/philophos-optometry.png")}
+          alt="필로포스-검안기 제품 이미지"
+          fill
+          sizes="(max-width: 767px) 100vw, 1024px"
+          preload
+          className="object-contain"
+        />
       </div>
     </section>
   );

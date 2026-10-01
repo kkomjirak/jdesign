@@ -1,0 +1,15 @@
+/* Reserve space for both text and the complete portrait render on short screens. */
+@media (max-height: 560px) {
+  .text {
+    top: 8%;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .tagline {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
