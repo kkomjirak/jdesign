@@ -7,8 +7,8 @@ for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
-    const hero = page.getByRole("region", { name: "JID 소개 영상" });
-    const title = hero.getByRole("heading", { name: "JID. Turning imagination into reality", exact: true });
+    const hero = page.getByRole("region", { name: "JiD 소개 영상" });
+    const title = hero.getByRole("heading", { name: "Turning imagination into reality", exact: true });
     await expect(title).toBeVisible();
     const button = hero.getByRole("button", { name: "영상 재생", exact: true });
     await expect(button).toHaveText("");
@@ -16,17 +16,28 @@ for (const width of [320, 390, 768, 1440]) {
     const [h, t, b] = await Promise.all([hero.boundingBox(), title.boundingBox(), button.boundingBox()]);
     expect(h && t && b).toBeTruthy();
     expect(Math.abs(t!.x + t!.width / 2 - h!.x - h!.width / 2)).toBeLessThanOrEqual(1);
-    expect(h!.y + h!.height - t!.y - t!.height).toBeLessThanOrEqual(112);
-    expect(h!.x + h!.width - b!.x - b!.width).toBeLessThanOrEqual(32);
-    expect(h!.y + h!.height - b!.y - b!.height).toBeLessThanOrEqual(24);
-    expect(t!.y + t!.height).toBeLessThanOrEqual(b!.y);
+    const bottomInset = h!.y + h!.height - t!.y - t!.height;
+    expect(bottomInset).toBeLessThanOrEqual(width < 768 ? 24 : 112);
+    expect(bottomInset).toBeGreaterThanOrEqual(width < 768 ? 16 : 0);
+    const rightInset = h!.x + h!.width - b!.x - b!.width;
+    const controlBottomInset = h!.y + h!.height - b!.y - b!.height;
+    expect(rightInset).toBeGreaterThanOrEqual(0);
+    expect(rightInset).toBeLessThanOrEqual(32);
+    expect(controlBottomInset).toBeGreaterThanOrEqual(0);
+    expect(controlBottomInset).toBeLessThanOrEqual(24);
+    const overlaps = t!.x < b!.x + b!.width && t!.x + t!.width > b!.x
+      && t!.y < b!.y + b!.height && t!.y + t!.height > b!.y;
+    expect(overlaps).toBe(false);
     expect(b!.width).toBeGreaterThanOrEqual(44);
     expect(b!.height).toBeGreaterThanOrEqual(44);
     const appearance = await button.evaluate((el) => {
       const s = getComputedStyle(el);
-      return { color: s.color, background: s.backgroundColor, border: s.borderTopWidth };
+      return { color: s.color, background: s.backgroundColor, border: s.borderTopWidth, opacity: s.opacity };
     });
-    expect(appearance).toEqual({ color: "rgb(255, 255, 255)", background: "rgba(0, 0, 0, 0)", border: "0px" });
+    expect(appearance).toEqual({ color: "rgb(255, 255, 255)", background: "rgba(0, 0, 0, 0)", border: "0px", opacity: "0.65" });
+    const icon = await button.locator("svg").boundingBox();
+    expect(icon?.width).toBe(18);
+    expect(icon?.height).toBe(18);
     expect(await title.evaluate((el) => getComputedStyle(el).textAlign)).toBe("center");
     expect(await title.locator("strong").allTextContents()).toEqual(["imagination", "reality"]);
     const weights = await title.evaluate((el) => ({ normal: Number(getComputedStyle(el).fontWeight), bold: Number(getComputedStyle(el.querySelector("strong")!).fontWeight) }));
@@ -38,3 +49,15 @@ for (const width of [320, 390, 768, 1440]) {
     await hero.screenshot({ path: testInfo.outputPath(`hero-refined-${width}.png`) });
   });
 }
+
+test("mobile slogan leaves only a small bottom inset", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
+  const hero = page.getByRole("region", { name: /소개 영상$/ });
+  const [h, title] = await Promise.all([hero.boundingBox(), hero.getByRole("heading").boundingBox()]);
+  expect(h && title).toBeTruthy();
+  const inset = h!.y + h!.height - title!.y - title!.height;
+  expect(inset).toBeGreaterThanOrEqual(16);
+  expect(inset).toBeLessThanOrEqual(24);
+});

@@ -18,16 +18,16 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2">
               <img
                 src={getAssetPath("/logo.png")}
-                alt="jiD design studio"
+                alt="JiD"
                 className="dark:hidden h-6 w-auto object-contain"
               />
               <img
                 src={getAssetPath("/logo_dark.png")}
-                alt="jiD design studio"
+                alt="JiD"
                 className="hidden dark:block h-6 w-auto object-contain"
               />
               <span className="font-semibold text-sm text-[#1D1D1F] dark:text-[#F5F5F7]">
-                jiD design studio
+                JiD
               </span>
             </Link>
             <p className="text-xs text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60">
@@ -70,47 +70,10 @@ export default function Footer() {
           </button>
         </div>
 
-        {/* Sub Footer: Copyright & Social Links */}
-        <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-[#1D1D1F]/50 dark:text-[#F5F5F7]/50">
-          <div>
-            Copyright © {new Date().getFullYear()} jiD design studio. All rights reserved.
-          </div>
-
-          <div className="flex items-center gap-4">
-            <a
-              href="https://behance.net"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
-            >
-              Behance
-            </a>
-            <a
-              href="https://dribbble.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
-            >
-              Dribbble
-            </a>
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
-            >
-              LinkedIn
-            </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#1D1D1F] dark:hover:text-white transition-colors"
-            >
-              Instagram
-            </a>
-          </div>
-        </div>
+        {/* Copyright */}
+        <p className="pt-6 text-center text-[11px] text-[#1D1D1F]/50 dark:text-[#F5F5F7]/50">
+          Copyright © {new Date().getFullYear()} JiD. All rights reserved.
+        </p>
       </div>
     </footer>
   );

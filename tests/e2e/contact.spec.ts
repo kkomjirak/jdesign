@@ -44,7 +44,7 @@ test("contact submits all fields by native POST with CAPTCHA enabled", async ({ 
   await page.getByRole("checkbox", { name: /FormSubmit/ }).check();
 
   const expectedFields = {
-    _subject: "[jdesign 문의] 프로젝트 문의",
+    _subject: "[JiD 문의] 프로젝트 문의",
     _template: "table",
     _captcha: "true",
     _honey: "",

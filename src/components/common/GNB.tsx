@@ -69,13 +69,13 @@ export default function GNB() {
             {/* Light mode logo */}
             <img 
               src={getAssetPath("/logo.png")} 
-              alt="jiD design studio" 
+              alt="JiD"
               className="dark:hidden h-7 md:h-8 w-auto object-contain"
             />
             {/* Dark mode logo */}
             <img 
               src={getAssetPath("/logo_dark.png")} 
-              alt="jiD design studio" 
+              alt="JiD"
               className="hidden dark:block h-7 md:h-8 w-auto object-contain"
             />
           </Link>

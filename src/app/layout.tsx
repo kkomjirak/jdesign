@@ -5,7 +5,7 @@ import Footer from "@/components/common/Footer";
 import { getAssetPath } from "@/lib/basePath";
 
 export const metadata: Metadata = {
-  title: "jiD design studio - Portfolio",
+  title: "JiD - Portfolio",
   description: "Innovative UI/UX, Branding & Web Design Portfolio",
   icons: {
     shortcut: getAssetPath("/favicon.ico?v=jid"),

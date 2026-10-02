@@ -1,6 +1,6 @@
-# jiD design studio - Portfolio Web Application
+# JiD - Portfolio Web Application
 
-Apple 감성의 미니멀하고 직관적인 인터랙션을 제공하는 **jiD design studio** 포트폴리오 웹사이트입니다.
+Apple 감성의 미니멀하고 직관적인 인터랙션을 제공하는 **JiD** 포트폴리오 웹사이트입니다.
 
 ---
 

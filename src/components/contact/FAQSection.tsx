@@ -11,7 +11,7 @@ const faqs = [
   {
     question: "디자인 외에 프론트엔드 웹/앱 개발까지 포함하여 진행 가능한가요?",
     answer:
-      "네, 가능합니다. jdesign studio는 Next.js, React, React Native 및 최신 인터랙션 모션(GSAP, Three.js)을 활용한 완성도 높은 프론트엔드 개발 서비스까지 통합 제공하고 있습니다.",
+      "네, 가능합니다. JiD는 Next.js, React, React Native 및 최신 인터랙션 모션(GSAP, Three.js)을 활용한 완성도 높은 프론트엔드 개발 서비스까지 통합 제공하고 있습니다.",
   },
   {
     question: "견적 및 계약 산정 기준은 어떻게 되나요?",

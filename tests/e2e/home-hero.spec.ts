@@ -6,8 +6,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 test("hero plays the supplied muted inline video behind the new headline", async ({ page, request }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(`${basePath}/`);
-  const hero = page.getByRole("region", { name: "JID 소개 영상" });
-  await expect(hero.getByRole("heading", { name: "JID. Turning imagination into reality", exact: true })).toBeVisible();
+  const hero = page.getByRole("region", { name: "JiD 소개 영상" });
+  await expect(hero.getByRole("heading", { name: "Turning imagination into reality", exact: true })).toBeVisible();
   const video = hero.locator("video");
   await expect(video).toHaveAttribute("src", `${basePath}/images/home/intro.webm`);
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 2 && v.videoWidth === 1920 && v.muted && v.loop && v.playsInline && !v.paused), { timeout: 15_000 }).toBe(true);
@@ -60,7 +60,7 @@ test("video pauses offscreen and resumes on return", async ({ page }) => {
 test("video error after playback shows the decoded poster instead of the last frame", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(`${basePath}/`);
-  const hero = page.getByRole("region", { name: "JID 소개 영상" });
+  const hero = page.getByRole("region", { name: "JiD 소개 영상" });
   const video = hero.locator("video");
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 2 && !v.paused), { timeout: 15_000 }).toBe(true);
   const initial = await video.evaluate((v: HTMLVideoElement) => v.currentTime);
@@ -77,7 +77,7 @@ test("video error after playback shows the decoded poster instead of the last fr
     return { complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, url: img.currentSrc };
   })).resolves.toEqual({ complete: true, width: 1920, height: 1080, url: expectedUrl });
   await expect(video).toBeHidden();
-  await expect(hero.getByRole("heading", { name: "JID. Turning imagination into reality", exact: true })).toBeVisible();
+  await expect(hero.getByRole("heading", { name: "Turning imagination into reality", exact: true })).toBeVisible();
   await expect(hero.getByRole("status")).toHaveText("영상을 재생할 수 없어 미리보기 이미지를 표시합니다.");
   await expect(hero.getByRole("button", { name: "영상 재생", exact: true })).toBeDisabled();
 });
@@ -85,7 +85,7 @@ test("video error after playback shows the decoded poster instead of the last fr
 test("failed video retains headline and an accessible poster fallback", async ({ page }) => {
   await page.route("**/images/home/intro.webm", (route) => route.fulfill({ status: 404, body: "Missing video" }));
   await page.goto(`${basePath}/`);
-  await expect(page.getByRole("heading", { name: "JID. Turning imagination into reality" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Turning imagination into reality" })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("영상을 재생할 수 없어");
   await expect(page.getByRole("button", { name: /영상 재생/ })).toBeDisabled();
 });

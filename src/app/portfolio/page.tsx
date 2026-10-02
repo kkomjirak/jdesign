@@ -1,8 +1,8 @@
 import PortfolioGrid from "@/components/portfolio/PortfolioGrid";
 
 export const metadata = {
-  title: "Portfolio - jiD design studio",
-  description: "jiD design studio의 혁신적인 프로젝트 포트폴리오입니다.",
+  title: "Portfolio - JiD",
+  description: "JiD의 혁신적인 프로젝트 포트폴리오입니다.",
 };
 
 export default function PortfolioPage() {

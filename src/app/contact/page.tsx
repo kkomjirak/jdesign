@@ -47,7 +47,7 @@ export default function ContactPage() {
           </h1>
           <p className="mt-4 text-base md:text-xl text-[#1D1D1F]/70 dark:text-[#F5F5F7]/70 max-w-xl mx-auto leading-relaxed">
             비주얼 아이덴티티부터 디지털 제품 인터랙션까지,<br />
-            jdesign studio와 함께 당신의 비전을 완성해보세요.
+            JiD와 함께 당신의 비전을 완성해보세요.
           </p>
         </div>
 

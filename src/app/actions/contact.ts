@@ -11,7 +11,7 @@ export const CONTACT_RECEIVER_EMAIL = "mail@jid.kr";
 
 export function formatContactContent(data: ContactFormData): string {
   const { name, email, company, message, selectedTypes, selectedBudget } = data;
-  return `📩 [jdesign studio - 프로젝트 문의 내용]
+  return `📩 [JiD - 프로젝트 문의 내용]
 
 👤 1. 성함 / 담당자명: ${name}
 📧 2. 이메일 주소: ${email}
@@ -27,7 +27,7 @@ ${message}
 }
 
 export function createMailtoLink(data: ContactFormData): string {
-  const subject = `[jdesign 문의] ${data.name}님의 프로젝트 문의입니다.`;
+  const subject = `[JiD 문의] ${data.name}님의 프로젝트 문의입니다.`;
   const body = formatContactContent(data);
   return `mailto:${CONTACT_RECEIVER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

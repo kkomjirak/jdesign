@@ -9,7 +9,7 @@ export default function Hero() {
   const { videoRef, playing, failed, togglePlayback } = useHeroVideo();
 
   return (
-    <section aria-label="JID 소개 영상" className={styles.hero}>
+    <section aria-label="JiD 소개 영상" className={styles.hero}>
       <video
         ref={videoRef}
         className={styles.video}
@@ -39,7 +39,6 @@ export default function Hero() {
       <div className={styles.shade} aria-hidden="true" />
       <div className={styles.content}>
         <h1 className={styles.title} lang="en">
-          <span className={styles.brand}>JID.</span>{" "}
           <span>Turning <strong>imagination</strong> into <strong>reality</strong></span>
         </h1>
         {failed && <p role="status" className={styles.fallback}>영상을 재생할 수 없어 미리보기 이미지를 표시합니다.</p>}

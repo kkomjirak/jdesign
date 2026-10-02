@@ -42,14 +42,6 @@
   text-shadow: 0 2px 16px rgb(0 0 0 / 24%);
 }
 
-.brand {
-  display: block;
-  margin-bottom: 12px;
-  font-size: clamp(16px, 1.5vw, 22px);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-}
-
 .title strong {
   font-weight: 600;
 }
@@ -99,18 +91,14 @@
   }
 
   .content {
-    left: 24px;
-    right: 24px;
-    bottom: 76px;
+    /* Symmetric gutters keep the slogan centered and clear of the icon. */
+    left: 64px;
+    right: 64px;
+    bottom: 20px;
   }
 
   .title {
-    font-size: clamp(20px, 5vw, 24px);
-  }
-
-  .brand {
-    margin-bottom: 8px;
-    font-size: 14px;
+    font-size: clamp(18px, 5vw, 20px);
   }
 
   .control {

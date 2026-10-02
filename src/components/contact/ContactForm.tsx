@@ -56,7 +56,7 @@ export default function ContactForm() {
       </p>
 
       <form action={`https://formsubmit.co/${CONTACT_RECEIVER_EMAIL}`} method="POST" className="space-y-8">
-        <input type="hidden" name="_subject" value="[jdesign 문의] 프로젝트 문의" />
+        <input type="hidden" name="_subject" value="[JiD 문의] 프로젝트 문의" />
         <input type="hidden" name="_template" value="table" />
         <input type="hidden" name="_captcha" value="true" />
         <input type="hidden" name="_next" value="https://kkomjirak.github.io/jdesign/contact/thanks/" />
@@ -164,7 +164,7 @@ export default function ContactForm() {
             autoComplete="organization"
             value={formData.company}
             onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            placeholder="jiD design (선택사항)"
+            placeholder="JiD (선택사항)"
             className="w-full px-4 py-3 rounded-[5px] bg-[#F2F2F7] dark:bg-[#252528] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#1D1D1F]/40 dark:placeholder-white/40 text-sm border border-[#1D1D1F]/15 dark:border-[#F5F5F7]/20 hover:border-[#0066CC]/60 dark:hover:border-[#0066CC]/70 focus:outline-none focus:border-[#0066CC] focus:bg-white dark:focus:bg-[#1C1C1E] focus:ring-2 focus:ring-[#0066CC]/20 transition-all"
           />
         </div>

@@ -2,10 +2,10 @@ import { test, expect } from "@playwright/test";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-test.describe("jiD design studio E2E Tests", () => {
+test.describe("JiD E2E Tests", () => {
   test("Home page loads properly", async ({ page }) => {
     await page.goto(`${basePath}/`);
-    await expect(page).toHaveTitle(/jiD design studio/i);
+    await expect(page).toHaveTitle("JiD - Portfolio");
     await expect(page.locator("nav")).toBeVisible();
   });
 

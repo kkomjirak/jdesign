@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "About Us - jiD design studio",
-  description: "About jiD design studio",
+  title: "About Us - JiD",
+  description: "About JiD",
 };
 
 export default function AboutPage() {

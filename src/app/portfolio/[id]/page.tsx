@@ -66,10 +66,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const project = (portfolioData as PortfolioItem[]).find((p) => p.id === resolvedParams.id);
-  if (!project) return { title: "Project Not Found - jiD design studio" };
+  if (!project) return { title: "Project Not Found - JiD" };
 
   return {
-    title: `${project.title} - jiD design studio`,
+    title: `${project.title} - JiD`,
     description: `${project.title} 제품 디자인 포트폴리오 상세 페이지입니다.`,
   };
 }
@@ -119,7 +119,7 @@ export default async function PortfolioDetailPage({
             {project.title}
           </h1>
           <p className="mt-4 text-sm md:text-base text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60 max-w-xl mx-auto">
-            {project.description || "jdesign의 디테일과 심미성이 담긴 산업/의료/제품 디자인 포트폴리오입니다."}
+            {project.description || "JiD의 디테일과 심미성이 담긴 산업/의료/제품 디자인 포트폴리오입니다."}
           </p>
         </div>
 

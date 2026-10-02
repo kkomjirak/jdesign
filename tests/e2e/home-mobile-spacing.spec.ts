@@ -6,7 +6,7 @@ for (const motion of ["no-preference", "reduce"] as const) {
   test(`video hero stays compact and flows directly into projects (${motion})`, async ({ page }, testInfo) => {
     await page.emulateMedia({ reducedMotion: motion });
     await page.goto(`${basePath}/`);
-    const hero = page.getByRole("region", { name: "JID 소개 영상" });
+    const hero = page.getByRole("region", { name: "JiD 소개 영상" });
     const cards = page.getByRole("region", { name: "3D 모델이 있는 대표 프로젝트" });
     for (const viewport of [{ width: 390, height: 844 }, { width: 390, height: 1100 }, { width: 320, height: 568 }, { width: 767, height: 844 }, { width: 768, height: 844 }, { width: 1440, height: 900 }]) {
       await page.setViewportSize(viewport);
@@ -17,7 +17,10 @@ for (const motion of ["no-preference", "reduce"] as const) {
         if (!h || !c || !v || !title || !control) return false;
         return Math.abs(c.y - h.y - h.height) <= 1
           && Math.abs(v.y - h.y) <= 1 && Math.abs(v.height - h.height) <= 1
-          && title.y >= h.y && title.y + title.height <= control.y
+          && title.y >= h.y && title.y + title.height <= h.y + h.height
+          && title.x >= h.x && title.x + title.width <= h.x + h.width
+          && !(title.x < control.x + control.width && title.x + title.width > control.x
+            && title.y < control.y + control.height && title.y + title.height > control.y)
           && control.y + control.height <= h.y + h.height;
       }).toBe(true);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

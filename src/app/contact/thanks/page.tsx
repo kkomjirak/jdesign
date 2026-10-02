@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CONTACT_RECEIVER_EMAIL } from "@/app/actions/contact";
 
 export const metadata: Metadata = {
-  title: "문의 전송 후 안내 | jiD design studio",
+  title: "문의 전송 후 안내 | JiD",
   robots: { index: false, follow: true },
 };
 
