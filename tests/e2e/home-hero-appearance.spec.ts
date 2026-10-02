@@ -60,7 +60,14 @@ test("mobile title and icon stay aligned when the fallback status appears", asyn
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
   const hero = page.getByRole("region", { name: "JiD 소개 영상" });
-  await expect(hero.getByRole("button", { name: "영상 재생", exact: true })).toBeVisible();
+  // Native media can decode before React installs its effects on a slow
+  // connection. Prove the controls are interactive before dispatching an error.
+  const playButton = hero.getByRole("button", { name: "영상 재생", exact: true });
+  await playButton.click();
+  const pauseButton = hero.getByRole("button", { name: "영상 일시 정지", exact: true });
+  await expect(pauseButton).toBeVisible();
+  await pauseButton.click();
+  await expect(playButton).toBeVisible();
   await expect.poll(() => hero.locator("video").evaluate((video: HTMLVideoElement) => video.readyState)).toBeGreaterThanOrEqual(2);
   await hero.locator("video").dispatchEvent("error");
   await expect(hero.getByRole("status")).toBeVisible();
