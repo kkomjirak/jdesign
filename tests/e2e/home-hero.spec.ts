@@ -1,68 +1,91 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import path from "node:path";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const imagePath = "/images/home/philophos-optometry.png";
-const tagline = "편안한 검안 경험을 위한 정제된 디자인.";
 
-test("hero uses the supplied Philophos image and project copy instead of placeholders", async ({ page, request }) => {
+test("hero plays the supplied muted inline video behind the new headline", async ({ page, request }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(`${basePath}/`);
-  const hero = page.locator("main section").first();
-  await expect(hero.getByRole("heading", { name: "필로포스-검안기", exact: true })).toBeVisible();
-  await expect(hero.getByText(tagline, { exact: true })).toBeVisible();
-  await expect(hero).not.toContainText(/iPhone 15 Pro|티타늄|Product Media Area|Video \/ Image Placeholder/);
-  const image = hero.getByRole("img", { name: "필로포스-검안기 제품 이미지", exact: true });
-  await expect(image).toHaveAttribute("src", `${basePath}${imagePath}`);
-  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 732 && img.naturalHeight === 1019)).toBe(true);
-  const response = await request.get(`${basePath}${imagePath}`);
+  const hero = page.getByRole("region", { name: "JID 소개 영상" });
+  await expect(hero.getByRole("heading", { name: "JID. 상상을 현실로", exact: true })).toBeVisible();
+  const video = hero.locator("video");
+  await expect(video).toHaveAttribute("src", `${basePath}/images/home/intro.webm`);
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 2 && v.videoWidth === 1920 && v.muted && v.loop && v.playsInline && !v.paused), { timeout: 15_000 }).toBe(true);
+  const initial = await video.evaluate((v: HTMLVideoElement) => v.currentTime);
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 10_000 }).toBeGreaterThan(initial + 0.1);
+  const response = await request.get(`${basePath}/images/home/intro.webm`);
   expect(response.status()).toBe(200);
-  expect(await response.body()).toEqual(fs.readFileSync(path.join(process.cwd(), "public", imagePath)));
-  expect(await image.evaluate((img) => getComputedStyle(img).objectFit)).toBe("contain");
+  expect(await response.body()).toEqual(fs.readFileSync("public/images/home/intro.webm"));
+  await expect(page.locator(".pin-spacer")).toHaveCount(0);
+  await expect(hero.getByRole("button", { name: "영상 일시 정지" })).toBeVisible();
 });
 
-for (const motion of ["no-preference", "reduce"] as const) {
-  test(`hero image stays fully within the hero and clear of text with ${motion} motion`, async ({ page }, testInfo) => {
-    await page.emulateMedia({ reducedMotion: motion });
-    await page.goto(`${basePath}/`);
-    const hero = page.locator("main section").first();
-    const image = hero.getByRole("img", { name: "필로포스-검안기 제품 이미지", exact: true });
-    const copy = hero.getByText(tagline, { exact: true });
-    await expect(image).toBeVisible();
-    await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" || page.viewportSize()!.width < 768 ? 0 : 1);
-    for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }, { width: 320, height: 568 }, { width: 390, height: 1100 }]) {
-      await page.setViewportSize(viewport);
-      await expect(page.locator(".pin-spacer")).toHaveCount(motion === "reduce" || viewport.width < 768 ? 0 : 1);
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await expect.poll(async () => {
-        const [heroBox, imageBox, copyBox] = await Promise.all([hero.boundingBox(), image.boundingBox(), copy.boundingBox()]);
-        if (!heroBox || !imageBox || !copyBox) return false;
-        return imageBox.y >= copyBox.y + copyBox.height - 1
-          && imageBox.y + imageBox.height <= heroBox.y + heroBox.height + 1
-          && imageBox.x >= heroBox.x - 1
-          && imageBox.x + imageBox.width <= heroBox.x + heroBox.width + 1;
-      }).toBe(true);
-      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      // Measure the visible alpha bounds, not the full object-contain box:
-      // the source has transparent padding and can be letterboxed on tall phones.
-      await expect.poll(() => image.evaluate((img: HTMLImageElement) => {
-        if (!img.complete || !img.naturalWidth) return Infinity;
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        let firstRow = 0;
-        while (firstRow < canvas.height && !Array.from({ length: canvas.width }, (_, x) => pixels[(firstRow * canvas.width + x) * 4 + 3]).some((alpha) => alpha > 0)) firstRow++;
-        const box = img.getBoundingClientRect();
-        const scale = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
-        const position = getComputedStyle(img).objectPosition.split(" ")[1];
-        const letterbox = (box.height - img.naturalHeight * scale) * (position === "0%" || position === "top" ? 0 : 0.5);
-        const copy = img.closest("section")!.querySelector("p")!.getBoundingClientRect();
-        return box.top + letterbox + firstRow * scale - copy.bottom;
-      })).toBeLessThanOrEqual(viewport.width < 768 ? 64 : 80);
-      await hero.screenshot({ path: testInfo.outputPath(`hero-${viewport.width}x${viewport.height}-${motion}.png`) });
-    }
-  });
-}
+test("video playback can be paused and resumed", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto(`${basePath}/`);
+  const video = page.locator("main video");
+  await page.getByRole("button", { name: "영상 일시 정지" }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await page.getByRole("button", { name: "영상 재생" }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(false);
+});
+
+test("reduced motion leaves a poster until the user explicitly plays", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${basePath}/`);
+  const video = page.locator("main video");
+  await expect(page.getByRole("button", { name: "영상 재생" })).toBeVisible();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused && v.currentTime === 0)).toBe(true);
+  await page.getByRole("button", { name: "영상 재생" }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused)).toBe(true);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  // Media-query changes are delivered during rendering; do not coalesce both
+  // transitions into the same frame before testing the change listener.
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+});
+
+test("video pauses offscreen and resumes on return", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto(`${basePath}/`);
+  const video = page.locator("main video");
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused)).toBe(true);
+});
+
+test("video error after playback shows the decoded poster instead of the last frame", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto(`${basePath}/`);
+  const hero = page.getByRole("region", { name: "JID 소개 영상" });
+  const video = hero.locator("video");
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 2 && !v.paused), { timeout: 15_000 }).toBe(true);
+  const initial = await video.evaluate((v: HTMLVideoElement) => v.currentTime);
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 10_000 }).toBeGreaterThan(initial + 0.1);
+
+  await video.evaluate((v: HTMLVideoElement) => v.dispatchEvent(new Event("error")));
+
+  const poster = hero.locator("img");
+  await expect(poster).toBeVisible();
+  await expect(poster).toHaveAttribute("src", `${basePath}/images/home/intro-poster.jpg`);
+  const expectedUrl = new URL(`${basePath}/images/home/intro-poster.jpg`, page.url()).href;
+  await expect(poster.evaluate(async (img: HTMLImageElement) => {
+    await img.decode();
+    return { complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, url: img.currentSrc };
+  })).resolves.toEqual({ complete: true, width: 1920, height: 1080, url: expectedUrl });
+  await expect(video).toBeHidden();
+  await expect(hero.getByRole("heading", { name: "JID. 상상을 현실로", exact: true })).toBeVisible();
+  await expect(hero.getByRole("status")).toHaveText("영상을 재생할 수 없어 미리보기 이미지를 표시합니다.");
+  await expect(hero.getByRole("button", { name: "영상 재생", exact: true })).toBeDisabled();
+});
+
+test("failed video retains headline and an accessible poster fallback", async ({ page }) => {
+  await page.route("**/images/home/intro.webm", (route) => route.fulfill({ status: 404, body: "Missing video" }));
+  await page.goto(`${basePath}/`);
+  await expect(page.getByRole("heading", { name: "JID. 상상을 현실로" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("영상을 재생할 수 없어");
+  await expect(page.getByRole("button", { name: /영상 재생/ })).toBeDisabled();
+});

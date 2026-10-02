@@ -395,7 +395,7 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
         )}
 
         {/* Top Floating Guide & Controls */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-end sm:justify-between pointer-events-none z-10">
+        <div className="absolute top-3 sm:top-4 left-4 right-4 flex items-center justify-end sm:justify-between pointer-events-none z-10">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 dark:bg-black/70 backdrop-blur-md border border-[#1D1D1F]/5 dark:border-white/10 text-[11px] text-[#1D1D1F]/80 dark:text-[#F5F5F7]/80 shadow-2xs">
             <span>🖱️</span>
             <span>좌클릭 드래그: 회전 | 휠: 줌</span>

@@ -2,9 +2,9 @@ import { test, expect } from "@playwright/test";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-test("hero stays separate from product cards throughout pinning and release", async ({ page }) => {
+test("hero stays separate from product cards throughout normal and reverse scrolling", async ({ page }) => {
   await page.goto(`${basePath}/`);
-  await expect(page.locator(".pin-spacer")).toHaveCount(page.viewportSize()!.width < 768 ? 0 : 1);
+  await expect(page.locator(".pin-spacer")).toHaveCount(0);
   const height = page.viewportSize()!.height;
   for (const fraction of [0.5, 0.9, 1.3, 1.9, 2.4, 1, 0]) {
     await page.evaluate((y) => window.scrollTo(0, y), height * fraction);
@@ -19,7 +19,7 @@ test("hero stays separate from product cards throughout pinning and release", as
 test("reduced motion keeps hero in normal flow with no scroll pinning", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(`${basePath}/`);
-  await expect(page.locator(".pin-spacer")).toHaveCount(page.viewportSize()!.width < 768 ? 0 : 1);
+  await expect(page.locator(".pin-spacer")).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".pin-spacer")).toHaveCount(0);
   const hero = page.locator("main section").first();
@@ -34,10 +34,10 @@ test("reduced motion keeps hero in normal flow with no scroll pinning", async ({
 
 test("hero spacing remains correct after mobile and desktop resizing", async ({ page }) => {
   await page.goto(`${basePath}/`);
-  await expect(page.locator(".pin-spacer")).toHaveCount(page.viewportSize()!.width < 768 ? 0 : 1);
+  await expect(page.locator(".pin-spacer")).toHaveCount(0);
   for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
-    await expect(page.locator(".pin-spacer")).toHaveCount(viewport.width < 768 ? 0 : 1);
+    await expect(page.locator(".pin-spacer")).toHaveCount(0);
     await page.evaluate((height) => window.scrollTo(0, height * 0.8), viewport.height);
     await expect.poll(() => page.evaluate(() => {
       const hero = document.querySelector("main section")!;

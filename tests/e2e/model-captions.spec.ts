@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd026", "jd030"];
+const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd008_b", "jd008_c", "jd020", "jd026", "jd027", "jd030"];
 
 for (const id of modelIds) {
   test(`${id}: 3D viewer omits the format caption but keeps its accessible name and controls`, async ({ page }) => {

@@ -9,21 +9,37 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 function discoverModel(files: string[]) {
   const original = fs.readdirSync;
-  // Control filesystem enumeration order without editing any real GLBs.
-  fs.readdirSync = (() => files) as unknown as typeof fs.readdirSync;
-  try { return getProjectModelPath("jd003"); }
-  finally { fs.readdirSync = original; }
+  let enumerations = 0;
+  // The allowlist must not inspect or select any legacy originals or backups.
+  fs.readdirSync = (() => { enumerations++; return files; }) as unknown as typeof fs.readdirSync;
+  try {
+    const modelPath = getProjectModelPath("jd003");
+    expect(enumerations).toBe(0);
+    return modelPath;
+  } finally { fs.readdirSync = original; }
 }
 
-test("model discovery prefers exact folder-name GLB", () => {
-  expect(discoverModel(["aaa.glb", "jd003_bak.glb", "jd003.glb"])).toBe("/images/portfolio/jd003/jd003.glb");
+test("model discovery selects the allowlisted web asset regardless of directory order", () => {
+  expect(discoverModel(["aaa.glb", "jd003_bak.glb", "jd003.glb"])).toBe("/images/glb/jd003_web.glb");
+  expect(discoverModel(["jd003.glb", "jd003_bak.glb", "aaa.glb"])).toBe("/images/glb/jd003_web.glb");
+  expect(discoverModel([])).toBe("/images/glb/jd003_web.glb");
 });
 
-test("model discovery excludes backups and uses stable fallback order", () => {
-  expect(discoverModel(["jd003_bak.glb", "old_backup.GLB", "BACKUP.glb", "z.glb", ".hidden.glb", "a.GLB"])).toBe("/images/portfolio/jd003/a.GLB");
-  expect(discoverModel(["z.glb", "a.GLB"])).toBe("/images/portfolio/jd003/a.GLB");
-  expect(discoverModel(["jd003_bak.glb", "old_backup.GLB", ".hidden.glb"])).toBeNull();
-  expect(discoverModel(["thumb.png"])).toBeNull();
+test("model discovery never falls back to originals or backups when the web asset is missing", () => {
+  const original = fs.existsSync;
+  const checkedPaths: string[] = [];
+  fs.existsSync = ((assetPath) => {
+    checkedPaths.push(String(assetPath));
+    return !String(assetPath).endsWith("jd003_web.glb");
+  }) as typeof fs.existsSync;
+  try {
+    expect(discoverModel(["jd003.glb", "jd003_bak.glb", "old_backup.GLB", "z.glb", ".hidden.glb", "a.GLB"])).toBeNull();
+    expect(discoverModel(["a.GLB", "z.glb", "jd003.glb"])).toBeNull();
+    expect(checkedPaths).toEqual([
+      `${process.cwd()}/public/images/glb/jd003_web.glb`,
+      `${process.cwd()}/public/images/glb/jd003_web.glb`,
+    ]);
+  } finally { fs.existsSync = original; }
 });
 
 test("shared model geometry, materials and textures are released exactly once", () => {
@@ -63,14 +79,14 @@ test("camera bounds remain empty for an entirely transparent model", () => {
   disposeModel(mesh);
 });
 
-const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd026", "jd030"];
+const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd008_b", "jd008_c", "jd020", "jd026", "jd027", "jd030"];
 
 test("missing GLB disables renderer controls and offers accessible fallback", async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   let release!: () => void;
   const blocked = new Promise<void>((resolve) => { release = resolve; });
-  await page.route("**/jd003.glb", async (route) => {
+  await page.route("**/images/glb/jd003_web.glb", async (route) => {
     await blocked;
     await route.fulfill({ status: 404, body: "Missing model" });
   });
@@ -129,7 +145,7 @@ test(`fullscreen ${mode} keeps normal view without an uncaught exception`, async
 
 test("offscreen viewer delays downloads and pauses drawing without reloading", async ({ page }) => {
   const requests: string[] = [];
-  page.on("request", (request) => { if (request.url().endsWith("/jd003.glb")) requests.push(request.url()); });
+  page.on("request", (request) => { if (request.url().endsWith("/images/glb/jd003_web.glb")) requests.push(request.url()); });
   await page.addInitScript(() => {
     Object.assign(window, { modelDraws: 0 });
     const draw = WebGL2RenderingContext.prototype.drawElements;
@@ -192,7 +208,7 @@ test("late GLB completion after navigation releases decoded image bitmaps", asyn
   const pending = new Promise<void>((resolve) => { release = resolve; });
   let requested!: () => void;
   const started = new Promise<void>((resolve) => { requested = resolve; });
-  await page.route("**/jd003.glb", async (route) => {
+  await page.route("**/images/glb/jd003_web.glb", async (route) => {
     requested();
     await pending;
     await route.continue();
@@ -347,7 +363,7 @@ for (const id of modelIds) {
           let edgePixels = 0;
           let minX = width, maxX = -1, minY = height, maxY = -1;
           const colors = new Set<number>();
-          for (let i = 0; i < pixels.length; i += 16) {
+          for (let i = 0; i < pixels.length; i += 4) {
             if (pixels[i + 3] > 0) {
               visible++;
               const x = (i / 4) % width;
@@ -363,10 +379,18 @@ for (const id of modelIds) {
         });
       };
     });
-    const modelResponse = page.waitForResponse((response) => response.url().endsWith(`/${id}.glb`) && response.ok());
+    const assetUrl = new URL(`${basePath}/images/glb/${id}_web.glb`, testInfo.project.use.baseURL).href;
+    const requestedModels: string[] = [];
+    page.on("request", (request) => {
+      if (/\.glb(?:\?|$)/i.test(request.url())) requestedModels.push(request.url());
+    });
+    const modelResponse = page.waitForResponse((response) => response.url() === assetUrl && response.ok());
     await page.goto(`${basePath}/portfolio/${id}/`);
     await page.getByRole("region", { name: /3D 모델/ }).scrollIntoViewIfNeeded();
-    await modelResponse;
+    const response = await modelResponse;
+    expect(response.url()).toBe(assetUrl);
+    // The actual loader must request the supplied binary, not a rewritten model.
+    expect(Buffer.compare(await response.body(), fs.readFileSync(`public/images/glb/${id}_web.glb`))).toBe(0);
     const canvas = page.locator("canvas");
     await expect(canvas).toBeVisible();
     await expect(page.getByText("3D 모델 데이터를 불러오는 중...")).toBeHidden({ timeout: 100_000 });
@@ -382,9 +406,10 @@ for (const id of modelIds) {
       expect((probe as { spanFraction: number }).spanFraction).toBeLessThanOrEqual(0.8);
     }
     expect(errors).toEqual([]);
+    expect(requestedModels).toEqual([assetUrl]);
     const screenshotPath = testInfo.outputPath(`${id}-rendered.png`);
     await canvas.screenshot({ path: screenshotPath });
-    const evidence = JSON.stringify({ id, status: "passed", probe, errors, warnings, screenshotPath }, null, 2);
+    const evidence = JSON.stringify({ id, status: "passed", assetUrl, requestedModels, originalAssetBytesVerified: true, probe, errors, warnings, screenshotPath }, null, 2);
     fs.writeFileSync(testInfo.outputPath(`${id}-result.json`), evidence);
     await testInfo.attach("render-evidence", { body: evidence, contentType: "application/json" });
     console.log(`${id} GPU evidence: ${JSON.stringify(probe)}; warnings: ${JSON.stringify(warnings)}`);

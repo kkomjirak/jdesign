@@ -3,52 +3,27 @@ import { test, expect } from "@playwright/test";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 for (const motion of ["no-preference", "reduce"] as const) {
-  test(`mobile product flows into the next projects without a blank tail (${motion})`, async ({ page }, testInfo) => {
+  test(`video hero stays compact and flows directly into projects (${motion})`, async ({ page }, testInfo) => {
     await page.emulateMedia({ reducedMotion: motion });
-    await page.goto(`${basePath}/`, { waitUntil: "domcontentloaded" });
-    for (const viewport of [{ width: 390, height: 844 }, { width: 390, height: 1100 }, { width: 320, height: 568 }]) {
+    await page.goto(`${basePath}/`);
+    const hero = page.getByRole("region", { name: "JID 소개 영상" });
+    const cards = page.getByRole("region", { name: "3D 모델이 있는 대표 프로젝트" });
+    for (const viewport of [{ width: 390, height: 844 }, { width: 390, height: 1100 }, { width: 320, height: 568 }, { width: 767, height: 844 }, { width: 768, height: 844 }, { width: 1440, height: 900 }]) {
       await page.setViewportSize(viewport);
       await page.evaluate(() => window.scrollTo(0, 0));
-      const hero = page.locator("main section").first();
-      const image = hero.getByRole("img", { name: "필로포스-검안기 제품 이미지" });
-      await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-      await expect.poll(() => image.evaluate((img: HTMLImageElement) => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        let lastRow = canvas.height - 1;
-        while (lastRow >= 0) {
-          let visible = false;
-          for (let x = 0; x < canvas.width; x++) if (data[(lastRow * canvas.width + x) * 4 + 3] > 0) { visible = true; break; }
-          if (visible) break;
-          lastRow--;
-        }
-        const box = img.getBoundingClientRect();
-        const scale = Math.min(box.width / img.naturalWidth, box.height / img.naturalHeight);
-        const productBottom = box.top + (lastRow + 1) * scale;
-        const projects = document.querySelector('section[aria-label="3D 모델이 있는 대표 프로젝트"]')!.getBoundingClientRect();
-        return projects.top - productBottom;
-      })).toBeLessThanOrEqual(80);
       await expect(page.locator(".pin-spacer")).toHaveCount(0);
-      await page.evaluate(() => {
-        const hero = document.querySelector("main section")!;
-        window.scrollTo(0, Math.max(0, hero.getBoundingClientRect().bottom + window.scrollY - innerHeight * 0.7));
-      });
-      await expect.poll(() => page.evaluate(() => {
-        const hero = document.querySelector("main section")!.getBoundingClientRect();
-        const cards = document.querySelector('section[aria-label="3D 모델이 있는 대표 프로젝트"]')!.getBoundingClientRect();
-        return cards.top - hero.bottom;
-      })).toBeGreaterThanOrEqual(-1);
-      const firstCard = page.getByRole("region", { name: "3D 모델이 있는 대표 프로젝트" }).getByRole("link").first();
-      await expect.poll(() => firstCard.evaluate((card) => {
-        const hero = document.querySelector("main section")!;
-        window.scrollTo(0, Math.max(0, hero.getBoundingClientRect().bottom + window.scrollY - innerHeight * 0.5));
-        return Number(getComputedStyle(card).opacity);
-      })).toBe(1);
-      await page.screenshot({ path: testInfo.outputPath(`mobile-tail-${viewport.width}x${viewport.height}-${motion}.png`) });
+      await expect.poll(async () => {
+        const [h, c, v, title, control] = await Promise.all([hero.boundingBox(), cards.boundingBox(), hero.locator("video").boundingBox(), hero.getByRole("heading").boundingBox(), hero.getByRole("button").boundingBox()]);
+        if (!h || !c || !v || !title || !control) return false;
+        return Math.abs(c.y - h.y - h.height) <= 1
+          && Math.abs(v.y - h.y) <= 1 && Math.abs(v.height - h.height) <= 1
+          && title.y >= h.y && title.y + title.height <= control.y
+          && control.y + control.height <= h.y + h.height;
+      }).toBe(true);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      const size = await hero.boundingBox();
+      if (viewport.width < 768) expect(size!.height).toBeLessThanOrEqual(Math.max(240, viewport.width * 0.625) + 1);
+      await hero.screenshot({ path: testInfo.outputPath(`video-hero-${viewport.width}x${viewport.height}-${motion}.png`) });
     }
   });
 }

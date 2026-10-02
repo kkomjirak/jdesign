@@ -1,7 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
 import Hero from "@/components/home/Hero";
 import PromoGrid from "@/components/home/PromoGrid";
+import { getProjectModelPath } from "@/lib/portfolioModels";
 import portfolioData from "../../public/images/portfolio/portfolio_data.json";
 
 const featuredIds = ["jd003", "jd005_a", "jd026", "jd030"];
@@ -11,8 +10,7 @@ export default function Home() {
   const projects = featuredIds.flatMap((id) => {
     const project = portfolioData.find((item) => item.id === id);
     if (!project) return [];
-    const modelFile = path.join(process.cwd(), "public", "images", "portfolio", project.folder, `${project.folder}.glb`);
-    return fs.existsSync(modelFile) ? [project] : [];
+    return getProjectModelPath(project.folder) ? [project] : [];
   });
 
   return (
