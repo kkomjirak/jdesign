@@ -38,7 +38,10 @@ export default function Hero() {
       )}
       <div className={styles.shade} aria-hidden="true" />
       <div className={styles.content}>
-        <h1 className={styles.title}>JID. 상상을 현실로</h1>
+        <h1 className={styles.title} lang="en">
+          <span className={styles.brand}>JID.</span>{" "}
+          <span>Turning <strong>imagination</strong> into <strong>reality</strong></span>
+        </h1>
         {failed && <p role="status" className={styles.fallback}>영상을 재생할 수 없어 미리보기 이미지를 표시합니다.</p>}
       </div>
       <button
@@ -47,9 +50,15 @@ export default function Hero() {
         onClick={togglePlayback}
         disabled={failed}
         aria-label={playing ? "영상 일시 정지" : "영상 재생"}
+        title={playing ? "영상 일시 정지" : "영상 재생"}
       >
-        <span aria-hidden="true">{playing ? "Ⅱ" : "▶"}</span>
-        <span>{playing ? "일시 정지" : "재생"}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+          {playing ? (
+            <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
+          ) : (
+            <path d="M8 5v14l11-7z" />
+          )}
+        </svg>
       </button>
     </section>
   );
