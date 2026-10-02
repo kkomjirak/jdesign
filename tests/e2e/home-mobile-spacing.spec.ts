@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 for (const motion of ["no-preference", "reduce"] as const) {
-  test(`video hero stays compact and flows directly into projects (${motion})`, async ({ page }, testInfo) => {
+  test(`video hero is square on mobile, unchanged on desktop, and flows directly into projects (${motion})`, async ({ page }, testInfo) => {
     await page.emulateMedia({ reducedMotion: motion });
     await page.goto(`${basePath}/`);
     const hero = page.getByRole("region", { name: "JiD 소개 영상" });
@@ -25,7 +25,12 @@ for (const motion of ["no-preference", "reduce"] as const) {
       }).toBe(true);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       const size = await hero.boundingBox();
-      if (viewport.width < 768) expect(size!.height).toBeLessThanOrEqual(Math.max(240, viewport.width * 0.625) + 1);
+      if (viewport.width < 768) {
+        expect(Math.abs(size!.height - size!.width)).toBeLessThanOrEqual(1);
+        expect(await hero.locator("video").evaluate((el) => getComputedStyle(el).objectFit)).toBe("cover");
+      } else {
+        expect(size!.height).toBeCloseTo(Math.max(280, Math.min(viewport.width * 0.5625, viewport.height - 44)), 0);
+      }
       await hero.screenshot({ path: testInfo.outputPath(`video-hero-${viewport.width}x${viewport.height}-${motion}.png`) });
     }
   });

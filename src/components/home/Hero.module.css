@@ -24,6 +24,10 @@
   pointer-events: none;
 }
 
+.overlay {
+  display: contents;
+}
+
 .content {
   position: absolute;
   left: clamp(24px, 6vw, 96px);
@@ -86,22 +90,44 @@
 
 @media (max-width: 767px) {
   .hero {
-    height: max(240px, 62.5vw);
+    height: auto;
+    aspect-ratio: 1 / 1;
     min-height: 0;
   }
 
-  .content {
+  .overlay {
     /* Symmetric gutters keep the slogan centered and clear of the icon. */
+    position: absolute;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
     left: 64px;
     right: 64px;
     bottom: 20px;
   }
 
+  .content {
+    display: contents;
+  }
+
   .title {
+    grid-area: 1 / 1;
     font-size: clamp(18px, 5vw, 20px);
+    text-align: center;
+  }
+
+  .fallback {
+    grid-area: 2 / 1;
+    text-align: center;
   }
 
   .control {
-    bottom: 12px;
+    /* Absolute grid placement aligns the icon with the title, not the status.
+       Keep its 44px hit area without increasing the title's bottom inset. */
+    grid-area: 1 / 1 / 2 / 2;
+    top: 50%;
+    right: -52px;
+    bottom: auto;
+    transform: translateY(-50%);
   }
 }
