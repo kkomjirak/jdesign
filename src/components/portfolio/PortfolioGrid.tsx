@@ -6,9 +6,7 @@ import { gsap } from "@/lib/gsap";
 import Link from "next/link";
 import { getAssetPath } from "@/lib/basePath";
 
-import portfolioData from "../../../public/images/portfolio/portfolio_data.json";
-
-interface PortfolioItem {
+export interface PortfolioItem {
   id: string;
   folder: string;
   title: string;
@@ -17,16 +15,13 @@ interface PortfolioItem {
   description?: string;
 }
 
-const allProducts: PortfolioItem[] = portfolioData as PortfolioItem[];
-
 const tabs = ["모든 프로젝트", "Product", "UX/UI"];
 
-const getTabCount = (tabName: string) => {
-  if (tabName === "모든 프로젝트") return allProducts.length;
-  return allProducts.filter((product) => product.category === tabName).length;
-};
-
-export default function PortfolioGrid() {
+export default function PortfolioGrid({ projects }: { projects: readonly PortfolioItem[] }) {
+  const getTabCount = (tabName: string) => {
+    if (tabName === "모든 프로젝트") return projects.length;
+    return projects.filter((product) => product.category === tabName).length;
+  };
   const [activeTab, setActiveTab] = useState("모든 프로젝트");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
@@ -34,7 +29,7 @@ export default function PortfolioGrid() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   // 탭 필터링
-  const filteredProducts = allProducts.filter((product) =>
+  const filteredProducts = projects.filter((product) =>
     activeTab === "모든 프로젝트" ? true : product.category === activeTab
   );
 
@@ -114,6 +109,12 @@ export default function PortfolioGrid() {
           ))}
         </div>
 
+        {filteredProducts.length === 0 && (
+          <p role="status" className="py-20 text-center text-[#6E6E73] dark:text-[#A1A1A6]">
+            프로젝트가 없습니다.
+          </p>
+        )}
+
         {/* 페이징 컨트롤 */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-20">
@@ -140,7 +141,7 @@ export default function PortfolioGrid() {
               ))}
             </div>
             <button
-              onClick={() => setCurrentPage((p) => Math.max(totalPages, p + 1))}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="px-4 py-2 rounded-lg text-sm font-medium text-[#1D1D1F] dark:text-white disabled:opacity-30 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
             >

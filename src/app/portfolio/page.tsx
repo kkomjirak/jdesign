@@ -1,4 +1,6 @@
 import PortfolioGrid from "@/components/portfolio/PortfolioGrid";
+import portfolioData from "../../../public/images/portfolio/portfolio_data.json";
+import { sortPortfolioProjects } from "@/lib/portfolioOrdering";
 
 export const metadata = {
   title: "Portfolio - JiD",
@@ -8,7 +10,7 @@ export const metadata = {
 export default function PortfolioPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-[#111111]">
-      <PortfolioGrid />
+      <PortfolioGrid projects={sortPortfolioProjects(portfolioData)} />
     </div>
   );
 }

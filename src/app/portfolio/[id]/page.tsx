@@ -1,12 +1,12 @@
-import fs from "fs";
-import path from "path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import portfolioData from "../../../../public/images/portfolio/portfolio_data.json";
-import DetailGalleryView, { DetailImageMeta } from "@/components/portfolio/DetailGalleryView";
+import DetailGalleryView from "@/components/portfolio/DetailGalleryView";
 import Model3DViewer from "@/components/portfolio/Model3DViewer";
 import { getAssetPath } from "@/lib/basePath";
 import { getProjectModelPaths } from "@/lib/portfolioModels";
+import { getProjectDetailImages } from "@/lib/portfolioImages";
+import { sortPortfolioProjects } from "@/lib/portfolioOrdering";
 
 interface PortfolioItem {
   id: string;
@@ -15,46 +15,6 @@ interface PortfolioItem {
   category: string;
   image: string;
   description?: string;
-}
-
-function getPngDimensions(filePath: string): { width: number; height: number } | null {
-  try {
-    const buffer = Buffer.alloc(24);
-    const fd = fs.openSync(filePath, "r");
-    fs.readSync(fd, buffer, 0, 24, 0);
-    fs.closeSync(fd);
-    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
-      const width = buffer.readUInt32BE(16);
-      const height = buffer.readUInt32BE(20);
-      return { width, height };
-    }
-  } catch (e) {
-    // fallback
-  }
-  return null;
-}
-
-function getProjectDetailImages(folderName: string): DetailImageMeta[] {
-  const dirPath = path.join(process.cwd(), "public", "images", "portfolio", folderName);
-  if (!fs.existsSync(dirPath)) return [];
-  const files = fs.readdirSync(dirPath);
-
-  const imageFiles = files
-    .filter((f) => !f.startsWith(".") && !f.includes("thumbs") && /\.(png|jpe?g|webp)$/i.test(f))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
-
-  return imageFiles.map((file) => {
-    const fullPath = path.join(dirPath, file);
-    const dims = getPngDimensions(fullPath) || { width: 1024, height: 768 };
-    const ratio = Number((dims.width / dims.height).toFixed(2));
-    return {
-      src: `/images/portfolio/${folderName}/${file}`,
-      filename: file,
-      width: dims.width,
-      height: dims.height,
-      ratio,
-    };
-  });
 }
 
 export async function generateStaticParams() {
@@ -80,7 +40,7 @@ export default async function PortfolioDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = await params;
-  const projects = portfolioData as PortfolioItem[];
+  const projects = sortPortfolioProjects(portfolioData as PortfolioItem[]);
   const currentIndex = projects.findIndex((p) => p.id === resolvedParams.id);
 
   if (currentIndex === -1) {
@@ -92,7 +52,10 @@ export default async function PortfolioDetailPage({
   const nextProject = currentIndex < projects.length - 1 ? projects[currentIndex + 1] : null;
 
   const folderName = project.folder || project.id;
-  const detailImages = getProjectDetailImages(folderName);
+  const allDetailImages = getProjectDetailImages(folderName);
+  const sequenceNames = new Set(Array.from({ length: 11 }, (_, index) => `jd038_${index + 2}.jpg`));
+  const sequenceFrames = folderName === "jd038" ? allDetailImages.filter((image) => sequenceNames.has(image.filename)) : [];
+  const detailImages = folderName === "jd038" ? allDetailImages.filter((image) => !sequenceNames.has(image.filename)) : allDetailImages;
   const modelPaths = getProjectModelPaths(folderName);
 
   return (
@@ -133,7 +96,7 @@ export default async function PortfolioDetailPage({
         </div>
 
         {/* Detail Images Showcase */}
-        <DetailGalleryView images={detailImages} projectTitle={project.title} />
+        <DetailGalleryView images={detailImages} sequenceFrames={sequenceFrames} projectTitle={project.title} />
 
         {/* 3D Interactive Model Showcase (Option B) */}
         {modelPaths.map((modelUrl, index) => (
@@ -161,14 +124,14 @@ export default async function PortfolioDetailPage({
         </div>
 
         {/* Bottom Prev / Next Navigation */}
-        <div className="mt-12 pt-8 border-t border-[#1D1D1F]/10 dark:border-[#F5F5F7]/10 flex justify-between items-center text-sm font-medium">
+        <div className="mt-12 pt-8 border-t border-[#1D1D1F]/10 dark:border-[#F5F5F7]/10 grid grid-cols-2 gap-6 items-center text-sm font-medium">
           {prevProject ? (
             <Link
               href={`/portfolio/${prevProject.id}`}
-              className="flex flex-col items-start group hover:text-[#0066CC] transition-colors"
+              className="min-w-0 flex flex-col items-start group hover:text-[#0066CC] transition-colors"
             >
               <span className="text-xs text-[#1D1D1F]/40 dark:text-[#F5F5F7]/40 mb-1">← 이전 프로젝트</span>
-              <span className="text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0066CC] transition-colors truncate max-w-[200px] md:max-w-[300px]">
+              <span className="text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0066CC] transition-colors truncate max-w-full md:max-w-[300px]">
                 {prevProject.title}
               </span>
             </Link>
@@ -179,10 +142,10 @@ export default async function PortfolioDetailPage({
           {nextProject && (
             <Link
               href={`/portfolio/${nextProject.id}`}
-              className="flex flex-col items-end text-right group hover:text-[#0066CC] transition-colors"
+              className="min-w-0 flex flex-col items-end text-right group hover:text-[#0066CC] transition-colors"
             >
               <span className="text-xs text-[#1D1D1F]/40 dark:text-[#F5F5F7]/40 mb-1">다음 프로젝트 →</span>
-              <span className="text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0066CC] transition-colors truncate max-w-[200px] md:max-w-[300px]">
+              <span className="text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0066CC] transition-colors truncate max-w-full md:max-w-[300px]">
                 {nextProject.title}
               </span>
             </Link>

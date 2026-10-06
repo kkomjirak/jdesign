@@ -152,6 +152,61 @@ export const modelProjects = [
     "files": [
       "jd035_web.glb"
     ]
+  },
+  {
+    "id": "jd017_e",
+    "files": [
+      "jd017_e_web.glb"
+    ]
+  },
+  {
+    "id": "jd037",
+    "files": [
+      "jd037_web.glb"
+    ]
+  },
+  {
+    "id": "jd039",
+    "files": [
+      "jd039_web.glb"
+    ]
+  },
+  {
+    "id": "jd040",
+    "files": [
+      "jd040_web.glb"
+    ]
+  },
+  {
+    "id": "jd042",
+    "files": [
+      "jd042_web.glb"
+    ]
+  },
+  {
+    "id": "jd043",
+    "files": [
+      "jd043_web.glb"
+    ]
+  },
+  {
+    "id": "jd044",
+    "files": [
+      "jd044_web.glb"
+    ]
+  },
+  {
+    "id": "jd045",
+    "files": [
+      "jd045_web.glb"
+    ]
+  },
+  {
+    "id": "jd041",
+    "files": [
+      "jd041-001_web.glb",
+      "jd041-002_web.glb"
+    ]
   }
 ];
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getAssetPath } from "@/lib/basePath";
+import ImageSequenceView from "./ImageSequenceView";
 
 export interface DetailImageMeta {
   src: string;
@@ -14,6 +15,7 @@ export interface DetailImageMeta {
 interface DetailGalleryViewProps {
   images: DetailImageMeta[];
   projectTitle: string;
+  sequenceFrames?: DetailImageMeta[];
 }
 
 interface ImageGroup {
@@ -55,10 +57,10 @@ function buildLayoutGroups(images: DetailImageMeta[]): ImageGroup[] {
   return groups;
 }
 
-export default function DetailGalleryView({ images, projectTitle }: DetailGalleryViewProps) {
+export default function DetailGalleryView({ images, projectTitle, sequenceFrames = [] }: DetailGalleryViewProps) {
   const [activeModalIndex, setActiveModalIndex] = useState<number | null>(null);
 
-  if (images.length === 0) {
+  if (images.length === 0 && sequenceFrames.length === 0) {
     return null;
   }
 
@@ -89,7 +91,7 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
           프로젝트 상세 시안
         </h2>
         <p className="mt-2 text-xs md:text-sm text-[#1D1D1F]/60 dark:text-[#F5F5F7]/60">
-          총 {images.length}개의 상세 디자인 시안이 등록되어 있습니다. (이미지 클릭 시 크게 보기)
+          총 {images.length + sequenceFrames.length}개의 상세 디자인 시안이 등록되어 있습니다. (이미지 클릭 시 크게 보기{sequenceFrames.length > 0 ? " · 연속 이미지 재생" : ""})
         </p>
       </div>
 
@@ -135,6 +137,8 @@ export default function DetailGalleryView({ images, projectTitle }: DetailGaller
           );
         })}
       </div>
+
+      {sequenceFrames.length > 0 && <ImageSequenceView frames={sequenceFrames} projectTitle={projectTitle} />}
 
       {/* Full-screen Lightbox Modal */}
       {activeModalIndex !== null && (

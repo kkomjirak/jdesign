@@ -29,6 +29,15 @@ const projectModelFiles: Readonly<Record<string, readonly string[]>> = {
   jd030: ["jd030_web.glb"],
   jd034_c: ["jd034_c_web.glb"],
   jd035: ["jd035_web.glb"],
+  jd017_e: ["jd017_e_web.glb"],
+  jd037: ["jd037_web.glb"],
+  jd039: ["jd039_web.glb"],
+  jd040: ["jd040_web.glb"],
+  jd042: ["jd042_web.glb"],
+  jd043: ["jd043_web.glb"],
+  jd044: ["jd044_web.glb"],
+  jd045: ["jd045_web.glb"],
+  jd041: ["jd041-001_web.glb", "jd041-002_web.glb"],
 };
 
 export function getProjectModelPaths(folderName: string): string[] {

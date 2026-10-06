@@ -8,6 +8,8 @@ import ts from "typescript";
 import portfolioData from "../../public/images/portfolio/portfolio_data.json";
 import { getProjectModelPath, getProjectModelPaths } from "../../src/lib/portfolioModels";
 import { modelProjects } from "./helpers/model-cases";
+import { getProjectDetailImages } from "../../src/lib/portfolioImages";
+import { sortPortfolioProjects } from "../../src/lib/portfolioOrdering";
 
 // Execute the real server-page selection without importing client-only CSS/GSAP.
 // Client children are not rendered: their props expose the selected projects.
@@ -58,6 +60,8 @@ async function detailViewers(id: string) {
       if (dependency === "fs") return fs;
       if (dependency === "path") return path;
       if (dependency === "@/lib/portfolioModels") return { getProjectModelPath, getProjectModelPaths };
+      if (dependency === "@/lib/portfolioImages") return { getProjectDetailImages };
+      if (dependency === "@/lib/portfolioOrdering") return { sortPortfolioProjects };
       if (dependency === "@/lib/basePath") return { getAssetPath: (assetPath: string) => assetPath };
       if (dependency.endsWith("portfolio_data.json")) return portfolioData;
       if (dependency === "@/components/portfolio/Model3DViewer") return ModelViewer;
@@ -77,14 +81,14 @@ async function detailViewers(id: string) {
   return viewers;
 }
 
-test("model routing maps the first available asset for all 25 projects", () => {
-  expect(modelProjects).toHaveLength(25);
+test("model routing maps the first available asset for all 34 projects", () => {
+  expect(modelProjects).toHaveLength(34);
   expect(modelProjects.map(({ id }) => getProjectModelPath(id))).toEqual(
     modelProjects.map(({ files }) => `/images/glb/${files[0]}`),
   );
 });
 
-test("model routing allowlist matches 25 existing metadata folders", () => {
+test("model routing allowlist matches 34 existing metadata folders", () => {
   const withModels = portfolioData.filter((project) => getProjectModelPath(project.folder));
   expect(withModels.map((project) => project.id).sort()).toEqual(modelProjects.map(({ id }) => id).sort());
   for (const { id } of modelProjects) {
@@ -125,15 +129,15 @@ test("home featured projects omit a missing web asset despite existing legacy GL
   });
 });
 
-test("model routing preserves the supplied order of all 28 instances and 28 unique assets", () => {
+test("model routing preserves the supplied order of all 38 instances and 38 unique assets", () => {
   expect(typeof getProjectModelPaths).toBe("function");
   const paths = modelProjects.flatMap(({ id, files }) => {
     const resolved = getProjectModelPaths(id);
     expect(resolved, id).toEqual(files.map((file) => `/images/glb/${file}`));
     return resolved;
   });
-  expect(paths).toHaveLength(28);
-  expect(new Set(paths).size).toBe(28);
+  expect(paths).toHaveLength(38);
+  expect(new Set(paths).size).toBe(38);
 });
 
 test("model routing filters each missing multi-model asset while retaining ordered siblings", () => {

@@ -1,0 +1,51 @@
+import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import ts from "typescript";
+import * as jsxRuntime from "react/jsx-runtime";
+import portfolioData from "../../public/images/portfolio/portfolio_data.json";
+import { getProjectModelPaths } from "../../src/lib/portfolioModels";
+
+type DetailImage = { src: string; filename: string; width: number; height: number; ratio: number };
+function detailImages(folder: string): DetailImage[] {
+  const helper = path.join(process.cwd(), "src/lib/portfolioImages.ts");
+  const filename = fs.existsSync(helper) ? helper : path.join(process.cwd(), "src/app/portfolio/[id]/page.tsx");
+  const source = fs.readFileSync(filename, "utf8") + "\nexports.inspectImages = getProjectDetailImages;";
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const exports: { inspectImages?: (folder: string) => DetailImage[] } = {};
+  vm.runInNewContext(compiled, { exports, process, Buffer, require: (name: string) => {
+    if (["fs", "node:fs"].includes(name)) return fs;
+    if (["path", "node:path"].includes(name)) return path;
+    if (name === "react/jsx-runtime") return jsxRuntime;
+    if (name.endsWith("portfolio_data.json")) return portfolioData;
+    if (name === "@/lib/portfolioModels") return { getProjectModelPaths };
+    if (name === "@/lib/basePath") return { getAssetPath: (value: string) => value };
+    return () => null;
+  } }, { filename });
+  return exports.inspectImages!(folder);
+}
+
+test("JPEG sequence metadata preserves actual frame dimensions instead of the old PNG-only fallback", () => {
+  const frames = detailImages("jd038");
+  expect(frames.find((image) => image.filename === "jd038_2.jpg")).toMatchObject({ width: 736, height: 405, ratio: 1.82 });
+  expect(frames.find((image) => image.filename === "jd038_12.jpg")).toMatchObject({ width: 728, height: 405 });
+});
+
+test("detail images preserve numeric ordering and exclude thumbnails for all nine new folders", () => {
+  for (let index = 37; index <= 45; index++) {
+    const id = `jd${String(index).padStart(3, "0")}`;
+    const original = fs.readdirSync(path.join(process.cwd(), "public/images/portfolio", id))
+      .filter((file) => !file.startsWith(".") && !file.includes("thumbs") && /\.(png|jpe?g|webp)$/i.test(file))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+    expect(detailImages(id).map((image) => image.filename)).toEqual(original);
+  }
+});
+
+test("detail images use bounded display derivatives when available and retain supplied originals", () => {
+  const images = detailImages("jd040");
+  const first = images.find((image) => image.filename === "jd040_1.jpg")!;
+  expect(first.src).toBe("/images/portfolio/optimized/jd040/jd040_1.webp");
+  expect(Math.max(first.width, first.height)).toBeLessThanOrEqual(2048);
+  expect(fs.statSync(path.join(process.cwd(), "public/images/portfolio/jd040/jd040_1.jpg")).size).toBe(16322749);
+});

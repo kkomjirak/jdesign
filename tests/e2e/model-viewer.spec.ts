@@ -74,6 +74,41 @@ test("camera bounds exclude invisible and fully transparent helper geometry", ()
   disposeModel(group);
 });
 
+test("camera bounds use instance transforms and ancestor world transforms instead of template geometry", () => {
+  const group = new THREE.Group();
+  group.position.set(5, -3, 7);
+  group.scale.set(2, 3, 4);
+  const geometry = new THREE.BoxGeometry(20, 40, 60);
+  const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial(), 2);
+  const transforms = [
+    new THREE.Matrix4().compose(new THREE.Vector3(1, 2, 3), new THREE.Quaternion(), new THREE.Vector3(0.1, 0.2, 0.05)),
+    new THREE.Matrix4().compose(new THREE.Vector3(-2, -1, 0), new THREE.Quaternion(), new THREE.Vector3(0.2, 0.1, 0.1)),
+  ];
+  transforms.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+  group.add(mesh);
+  // Exclusions must also hold for hidden/transparent instanced meshes.
+  const transparent = new THREE.InstancedMesh(new THREE.BoxGeometry(1000, 1000, 1000), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0 }), 1);
+  const hidden = new THREE.InstancedMesh(new THREE.BoxGeometry(2000, 2000, 2000), new THREE.MeshStandardMaterial(), 1);
+  hidden.visible = false;
+  group.add(transparent, hidden);
+  group.updateWorldMatrix(true, true);
+  const expected = new THREE.Box3();
+  // Independent oracle: transform every actual template vertex through each
+  // stored instance matrix and world matrix, without using object bounding boxes.
+  for (let instance = 0; instance < mesh.count; instance++) {
+    const matrix = new THREE.Matrix4();
+    mesh.getMatrixAt(instance, matrix);
+    const positions = geometry.getAttribute("position");
+    for (let vertex = 0; vertex < positions.count; vertex++) {
+      expected.expandByPoint(new THREE.Vector3().fromBufferAttribute(positions, vertex).applyMatrix4(matrix).applyMatrix4(mesh.matrixWorld));
+    }
+  }
+  const actual = getRenderableModelBounds(group);
+  expect(actual.min.distanceTo(expected.min)).toBeLessThan(1e-10);
+  expect(actual.max.distanceTo(expected.max)).toBeLessThan(1e-10);
+  disposeModel(group);
+});
+
 test("camera bounds remain empty for an entirely transparent model", () => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0 }));
   expect(getRenderableModelBounds(mesh).isEmpty()).toBe(true);
@@ -444,6 +479,27 @@ for (const { id, file, index, count } of modelCases) {
     page.on("request", (request) => {
       if (/\.glb(?:\?|$)/i.test(request.url())) requestedModels.push(request.url());
     });
+    // Chromium's default inspector resource cache evicts responses above ~10 MB.
+    // Capture the SAME loader request through a separately bounded CDP cache:
+    // no extra fetch, rewritten response, interception or weaker byte assertion.
+    const network = await page.context().newCDPSession(page);
+    await network.send("Network.enable", {
+      maxTotalBufferSize: 128 * 1024 * 1024,
+      maxResourceBufferSize: 64 * 1024 * 1024,
+    });
+    let targetRequestId: string | undefined;
+    network.on("Network.responseReceived", (event) => {
+      if (event.response.url === assetUrl) targetRequestId = event.requestId;
+    });
+    const responseBody = new Promise<Buffer>((resolve, reject) => {
+      network.on("Network.loadingFinished", (event) => {
+        if (event.requestId !== targetRequestId) return;
+        void network.send("Network.getResponseBody", { requestId: event.requestId }).then(
+          (result) => resolve(Buffer.from(result.body, result.base64Encoded ? "base64" : "utf8")),
+          reject,
+        );
+      });
+    }).then((body) => ({ body, error: null }), (error: unknown) => ({ body: Buffer.alloc(0), error: String(error) }));
     const modelResponse = page.waitForResponse((response) => response.url() === assetUrl && response.ok());
     await page.goto(`${basePath}/portfolio/${id}/`);
     const viewers = page.getByRole("region", { name: /3D 모델$/ });
@@ -453,7 +509,10 @@ for (const { id, file, index, count } of modelCases) {
     const response = await modelResponse;
     expect(response.url()).toBe(assetUrl);
     // The actual loader must request the supplied binary, not a rewritten model.
-    expect(Buffer.compare(await response.body(), fs.readFileSync(`public/images/glb/${file}`))).toBe(0);
+    const captured = await responseBody;
+    expect(captured.error).toBeNull();
+    expect(Buffer.compare(captured.body, fs.readFileSync(`public/images/glb/${file}`))).toBe(0);
+    await network.detach();
     const canvas = region.locator("canvas");
     await expect(canvas).toBeVisible();
     await expect(region.getByText("3D 모델 데이터를 불러오는 중...")).toBeHidden({ timeout: 100_000 });
