@@ -6,7 +6,7 @@ import portfolioData from "../../../../public/images/portfolio/portfolio_data.js
 import DetailGalleryView, { DetailImageMeta } from "@/components/portfolio/DetailGalleryView";
 import Model3DViewer from "@/components/portfolio/Model3DViewer";
 import { getAssetPath } from "@/lib/basePath";
-import { getProjectModelPath } from "@/lib/portfolioModels";
+import { getProjectModelPaths } from "@/lib/portfolioModels";
 
 interface PortfolioItem {
   id: string;
@@ -93,7 +93,7 @@ export default async function PortfolioDetailPage({
 
   const folderName = project.folder || project.id;
   const detailImages = getProjectDetailImages(folderName);
-  const modelPath = getProjectModelPath(folderName);
+  const modelPaths = getProjectModelPaths(folderName);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-[#111111] transition-colors duration-300 py-12 md:py-20 px-4 md:px-8">
@@ -136,9 +136,13 @@ export default async function PortfolioDetailPage({
         <DetailGalleryView images={detailImages} projectTitle={project.title} />
 
         {/* 3D Interactive Model Showcase (Option B) */}
-        {modelPath && (
-          <Model3DViewer modelUrl={modelPath} projectTitle={project.title} />
-        )}
+        {modelPaths.map((modelUrl, index) => (
+          <Model3DViewer
+            key={modelUrl}
+            modelUrl={modelUrl}
+            projectTitle={modelPaths.length > 1 ? `${project.title} — 모델 ${index + 1}` : project.title}
+          />
+        ))}
 
         {/* CTA Banner */}
         <div className="mt-16 md:mt-24 p-8 md:p-12 rounded-[5px] bg-white dark:bg-[#1C1C1E] border border-[#1D1D1F]/5 dark:border-white/10 text-center flex flex-col items-center justify-center gap-4 shadow-sm">

@@ -67,7 +67,7 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
     const container = containerRef.current;
     if (!container) return;
     try {
-      if (!document.fullscreenElement) {
+      if (document.fullscreenElement !== container) {
         await container.requestFullscreen?.();
       } else {
         await document.exitFullscreen?.();
@@ -80,7 +80,7 @@ export default function Model3DViewer({ modelUrl, projectTitle }: Model3DViewerP
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!containerRef.current && document.fullscreenElement === containerRef.current);
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);

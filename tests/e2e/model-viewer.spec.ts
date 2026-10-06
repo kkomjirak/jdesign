@@ -4,6 +4,7 @@ import { getProjectModelPath } from "../../src/lib/portfolioModels";
 import * as THREE from "three";
 import { disposeModel } from "../../src/lib/modelViewerResources";
 import { getRenderableModelBounds } from "../../src/lib/modelViewerBounds";
+import { modelCases, modelProjects } from "./helpers/model-cases";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -79,7 +80,6 @@ test("camera bounds remain empty for an entirely transparent model", () => {
   disposeModel(mesh);
 });
 
-const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd008_b", "jd008_c", "jd020", "jd026", "jd027", "jd030"];
 
 test("missing GLB disables renderer controls and offers accessible fallback", async ({ page }, testInfo) => {
   const errors: string[] = [];
@@ -119,6 +119,20 @@ test("unsupported WebGL shows fallback without an uncaught exception", async ({ 
   await expect(region).toHaveAttribute("data-state", "error");
   await expect(region.getByRole("alert")).toContainText("이미지");
   expect(errors).toEqual([]);
+});
+
+test("fullscreen state belongs only to the viewer whose container is fullscreen", async ({ page }) => {
+  await page.goto(`${basePath}/portfolio/jd003/`);
+  const region = page.getByRole("region", { name: /3D 모델/ });
+  await region.scrollIntoViewIfNeeded();
+  await expect(region).toHaveAttribute("data-state", "ready", { timeout: 100_000 });
+  await page.evaluate(() => {
+    const foreign = document.createElement("div");
+    document.body.appendChild(foreign);
+    Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => foreign });
+    document.dispatchEvent(new Event("fullscreenchange"));
+  });
+  await expect(region.getByRole("button", { name: "전체화면", exact: true })).toHaveAttribute("aria-pressed", "false");
 });
 
 for (const mode of ["unavailable", "denied"] as const) {
@@ -335,8 +349,53 @@ test("viewer toolbar stays on one line per button at narrow widths", async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
-for (const id of modelIds) {
-  test(`${id}: actual GLTFLoader renders nonblank model pixels`, async ({ page }, testInfo) => {
+for (const { id, files } of modelProjects.filter((project) => project.files.length > 1)) {
+  test(`${id}: multiple viewers lazy-load and keep controls and fullscreen state independent`, async ({ page }) => {
+    const errors: string[] = [];
+    const requests: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("request", (request) => { if (/\.glb(?:\?|$)/i.test(request.url())) requests.push(request.url()); });
+    await page.goto(`${basePath}/portfolio/${id}/`);
+    const viewers = page.getByRole("region", { name: /3D 모델$/ });
+    await expect(viewers).toHaveCount(files.length);
+    expect(requests).toEqual([]);
+    for (let index = 0; index < files.length; index++) {
+      const viewer = viewers.nth(index);
+      await viewer.scrollIntoViewIfNeeded();
+      await expect(viewer).toHaveAttribute("data-state", "ready", { timeout: 100_000 });
+      await viewer.getByRole("button", { name: /자동 회전/ }).click();
+      await expect(viewer.getByRole("button", { name: /자동 회전/ })).toHaveAttribute("aria-pressed", "false");
+      for (let other = index + 1; other < files.length; other++) {
+        await expect(viewers.nth(other).getByRole("button", { name: /자동 회전/ })).toHaveAttribute("aria-pressed", "true");
+      }
+    }
+    const fullscreen = await viewers.nth(0).locator("canvas").evaluateHandle((canvas) => canvas.parentElement);
+    await page.evaluate((container) => {
+      Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => container });
+      document.dispatchEvent(new Event("fullscreenchange"));
+    }, fullscreen);
+    await expect(viewers.nth(0).getByRole("button", { name: "축소", exact: true })).toHaveAttribute("aria-pressed", "true");
+    for (let index = 1; index < files.length; index++) {
+      await expect(viewers.nth(index).getByRole("button", { name: "전체화면", exact: true })).toHaveAttribute("aria-pressed", "false");
+    }
+    await page.evaluate(() => {
+      Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => null });
+      document.dispatchEvent(new Event("fullscreenchange"));
+    });
+    await expect(viewers.nth(0).getByRole("button", { name: "전체화면", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await fullscreen.dispose();
+    for (let index = 0; index < files.length; index++) {
+      await viewers.nth(index).scrollIntoViewIfNeeded();
+      await expect(viewers.nth(index)).toHaveAttribute("data-state", "ready");
+      await expect(viewers.nth(index).getByRole("button", { name: /자동 회전/ })).toHaveAttribute("aria-pressed", "false");
+    }
+    expect(requests.map((url) => new URL(url).pathname).sort()).toEqual(files.map((file) => `${basePath}/images/glb/${file}`).sort());
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const { id, file, index, count } of modelCases) {
+  test(`${id}/${file}: actual GLTFLoader renders nonblank model pixels`, async ({ page }, testInfo) => {
     const errors: string[] = [];
     const warnings: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -346,10 +405,11 @@ for (const id of modelIds) {
     await page.addInitScript(() => {
       type Probe = { requested: boolean; draws: number; pixels: number; colors: number; width: number; height: number; edgePixels: number; spanFraction: number };
       const probe: Probe = { requested: false, draws: 0, pixels: 0, colors: 0, width: 0, height: 0, edgePixels: 0, spanFraction: 0 };
-      Object.assign(window, { modelProbe: probe });
+      Object.assign(window, { modelProbe: probe, modelProbeTarget: null });
       const original = WebGL2RenderingContext.prototype.drawElements;
       WebGL2RenderingContext.prototype.drawElements = function (...args) {
         original.apply(this, args);
+        if (this.canvas !== (window as unknown as { modelProbeTarget: HTMLCanvasElement | null }).modelProbeTarget) return;
         probe.draws++;
         if (!probe.requested) return;
         // All draw calls are synchronous inside a frame; a microtask sees the completed frame.
@@ -379,24 +439,30 @@ for (const id of modelIds) {
         });
       };
     });
-    const assetUrl = new URL(`${basePath}/images/glb/${id}_web.glb`, testInfo.project.use.baseURL).href;
+    const assetUrl = new URL(`${basePath}/images/glb/${file}`, testInfo.project.use.baseURL).href;
     const requestedModels: string[] = [];
     page.on("request", (request) => {
       if (/\.glb(?:\?|$)/i.test(request.url())) requestedModels.push(request.url());
     });
     const modelResponse = page.waitForResponse((response) => response.url() === assetUrl && response.ok());
     await page.goto(`${basePath}/portfolio/${id}/`);
-    await page.getByRole("region", { name: /3D 모델/ }).scrollIntoViewIfNeeded();
+    const viewers = page.getByRole("region", { name: /3D 모델$/ });
+    await expect(viewers).toHaveCount(count);
+    const region = viewers.nth(index);
+    await region.scrollIntoViewIfNeeded();
     const response = await modelResponse;
     expect(response.url()).toBe(assetUrl);
     // The actual loader must request the supplied binary, not a rewritten model.
-    expect(Buffer.compare(await response.body(), fs.readFileSync(`public/images/glb/${id}_web.glb`))).toBe(0);
-    const canvas = page.locator("canvas");
+    expect(Buffer.compare(await response.body(), fs.readFileSync(`public/images/glb/${file}`))).toBe(0);
+    const canvas = region.locator("canvas");
     await expect(canvas).toBeVisible();
-    await expect(page.getByText("3D 모델 데이터를 불러오는 중...")).toBeHidden({ timeout: 100_000 });
-    await expect(page.getByText("3D 모델을 불러오는 중 오류가 발생했습니다.")).toBeHidden();
-    await expect(page.getByRole("region", { name: /3D 모델/ })).toHaveAttribute("data-state", "ready");
-    await page.evaluate(() => { (window as unknown as { modelProbe: { requested: boolean } }).modelProbe.requested = true; });
+    await expect(region.getByText("3D 모델 데이터를 불러오는 중...")).toBeHidden({ timeout: 100_000 });
+    await expect(region.getByRole("alert")).toHaveCount(0);
+    await expect(region).toHaveAttribute("data-state", "ready");
+    await canvas.evaluate((element) => {
+      Object.assign(window, { modelProbeTarget: element });
+      (window as unknown as { modelProbe: { requested: boolean } }).modelProbe.requested = true;
+    });
     await expect.poll(() => page.evaluate(() => (window as unknown as { modelProbe: { pixels: number } }).modelProbe.pixels), { timeout: 20_000 }).toBeGreaterThan(500);
     const probe = await page.evaluate(() => (window as unknown as { modelProbe: object }).modelProbe);
     expect((probe as { colors: number }).colors).toBeGreaterThan(20);
@@ -406,11 +472,15 @@ for (const id of modelIds) {
       expect((probe as { spanFraction: number }).spanFraction).toBeLessThanOrEqual(0.8);
     }
     expect(errors).toEqual([]);
-    expect(requestedModels).toEqual([assetUrl]);
-    const screenshotPath = testInfo.outputPath(`${id}-rendered.png`);
+    const allowedUrls = modelProjects.find((project) => project.id === id)!.files
+      .map((filename) => new URL(`${basePath}/images/glb/${filename}`, testInfo.project.use.baseURL).href);
+    expect(requestedModels.filter((url) => url === assetUrl)).toHaveLength(1);
+    expect(requestedModels.every((url) => allowedUrls.includes(url))).toBe(true);
+    expect(new Set(requestedModels).size).toBe(requestedModels.length);
+    const screenshotPath = testInfo.outputPath(`${id}-${file}-rendered.png`);
     await canvas.screenshot({ path: screenshotPath });
-    const evidence = JSON.stringify({ id, status: "passed", assetUrl, requestedModels, originalAssetBytesVerified: true, probe, errors, warnings, screenshotPath }, null, 2);
-    fs.writeFileSync(testInfo.outputPath(`${id}-result.json`), evidence);
+    const evidence = JSON.stringify({ id, file, index, modelCount: count, status: "passed", assetUrl, requestedModels, originalAssetBytesVerified: true, probe, errors, warnings, screenshotPath }, null, 2);
+    fs.writeFileSync(testInfo.outputPath(`${id}-${file}-result.json`), evidence);
     await testInfo.attach("render-evidence", { body: evidence, contentType: "application/json" });
     console.log(`${id} GPU evidence: ${JSON.stringify(probe)}; warnings: ${JSON.stringify(warnings)}`);
   });

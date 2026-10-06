@@ -2,12 +2,12 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import { isValidElement, type ReactNode } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import ts from "typescript";
 import portfolioData from "../../public/images/portfolio/portfolio_data.json";
-import { getProjectModelPath } from "../../src/lib/portfolioModels";
-
-const modelIds = ["jd001", "jd003", "jd005_a", "jd005_b", "jd006", "jd008_b", "jd008_c", "jd020", "jd026", "jd027", "jd030"];
+import { getProjectModelPath, getProjectModelPaths } from "../../src/lib/portfolioModels";
+import { modelProjects } from "./helpers/model-cases";
 
 // Execute the real server-page selection without importing client-only CSS/GSAP.
 // Client children are not rendered: their props expose the selected projects.
@@ -41,16 +41,53 @@ function withAssetAvailability<T>(available: (assetPath: string) => boolean, run
   finally { fs.existsSync = original; }
 }
 
-test("model routing maps exactly the eleven supplied web assets", () => {
-  expect(modelIds.map((id) => getProjectModelPath(id))).toEqual(
-    modelIds.map((id) => `/images/glb/${id}_web.glb`),
+function ModelViewer() { return null; }
+
+async function detailViewers(id: string) {
+  const filename = path.join(process.cwd(), "src/app/portfolio/[id]/page.tsx");
+  const compiled = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  }).outputText;
+  const exports: { default?: (props: { params: Promise<{ id: string }> }) => Promise<ReactNode> } = {};
+  vm.runInNewContext(compiled, {
+    exports,
+    process,
+    Buffer,
+    require: (dependency: string) => {
+      if (dependency === "react/jsx-runtime") return jsxRuntime;
+      if (dependency === "fs") return fs;
+      if (dependency === "path") return path;
+      if (dependency === "@/lib/portfolioModels") return { getProjectModelPath, getProjectModelPaths };
+      if (dependency === "@/lib/basePath") return { getAssetPath: (assetPath: string) => assetPath };
+      if (dependency.endsWith("portfolio_data.json")) return portfolioData;
+      if (dependency === "@/components/portfolio/Model3DViewer") return ModelViewer;
+      if (dependency === "next/link" || dependency === "@/components/portfolio/DetailGalleryView") return () => null;
+      if (dependency === "next/navigation") return { notFound: () => { throw new Error("Project not found"); } };
+      throw new Error(`Unexpected detail-page dependency: ${dependency}`);
+    },
+  }, { filename });
+  const viewers: { modelUrl: string; projectTitle: string; key: string | null }[] = [];
+  function visit(node: ReactNode) {
+    if (Array.isArray(node)) { node.forEach(visit); return; }
+    if (!isValidElement<{ children?: ReactNode; modelUrl: string; projectTitle: string }>(node)) return;
+    if (node.type === ModelViewer) viewers.push({ modelUrl: node.props.modelUrl, projectTitle: node.props.projectTitle, key: node.key });
+    visit(node.props.children);
+  }
+  visit(await exports.default!({ params: Promise.resolve({ id }) }));
+  return viewers;
+}
+
+test("model routing maps the first available asset for all 25 projects", () => {
+  expect(modelProjects).toHaveLength(25);
+  expect(modelProjects.map(({ id }) => getProjectModelPath(id))).toEqual(
+    modelProjects.map(({ files }) => `/images/glb/${files[0]}`),
   );
 });
 
-test("model routing allowlist matches eleven existing metadata folders", () => {
+test("model routing allowlist matches 25 existing metadata folders", () => {
   const withModels = portfolioData.filter((project) => getProjectModelPath(project.folder));
-  expect(withModels.map((project) => project.id).sort()).toEqual([...modelIds].sort());
-  for (const id of modelIds) {
+  expect(withModels.map((project) => project.id).sort()).toEqual(modelProjects.map(({ id }) => id).sort());
+  for (const { id } of modelProjects) {
     const projects = portfolioData.filter((project) => project.id === id);
     expect(projects).toHaveLength(1);
     expect(projects[0].folder).toBe(id);
@@ -58,17 +95,21 @@ test("model routing allowlist matches eleven existing metadata folders", () => {
   }
 });
 
-test("model routing returns null for unlisted IDs even when files exist", () => {
+test("model routing returns no assets for unlisted IDs even when files exist", () => {
+  expect(typeof getProjectModelPaths).toBe("function");
   withAssetAvailability(() => true, () => {
-    for (const id of ["jd002", "jd999", "../jd003", "jd003_web", "constructor", "__proto__", "toString"]) {
+    for (const id of ["jd002", "jd004", "jd999", "../jd003", "jd003_web", "constructor", "__proto__", "toString"]) {
       expect(getProjectModelPath(id), id).toBeNull();
+      expect(getProjectModelPaths(id), id).toEqual([]);
     }
   });
 });
 
-test("model routing returns null for a missing web asset without a legacy fallback", () => {
+test("model routing returns no assets for a missing web asset without a legacy fallback", () => {
+  expect(typeof getProjectModelPaths).toBe("function");
   withAssetAvailability((assetPath) => !assetPath.endsWith("jd003_web.glb"), () => {
     expect(getProjectModelPath("jd003")).toBeNull();
+    expect(getProjectModelPaths("jd003")).toEqual([]);
   });
 });
 
@@ -82,4 +123,58 @@ test("home featured projects omit a missing web asset despite existing legacy GL
   withAssetAvailability((assetPath) => !assetPath.endsWith("jd026_web.glb"), () => {
     expect(homeProjectIds()).toEqual(["jd003", "jd005_a", "jd030"]);
   });
+});
+
+test("model routing preserves the supplied order of all 28 instances and 28 unique assets", () => {
+  expect(typeof getProjectModelPaths).toBe("function");
+  const paths = modelProjects.flatMap(({ id, files }) => {
+    const resolved = getProjectModelPaths(id);
+    expect(resolved, id).toEqual(files.map((file) => `/images/glb/${file}`));
+    return resolved;
+  });
+  expect(paths).toHaveLength(28);
+  expect(new Set(paths).size).toBe(28);
+});
+
+test("model routing filters each missing multi-model asset while retaining ordered siblings", () => {
+  expect(typeof getProjectModelPaths).toBe("function");
+  for (const { id, files } of modelProjects.filter(({ files }) => files.length > 1)) {
+    for (const missingFile of files) {
+      withAssetAvailability((assetPath) => !assetPath.endsWith(missingFile), () => {
+        const expected = files.filter((file) => file !== missingFile).map((file) => `/images/glb/${file}`);
+        expect(getProjectModelPaths(id), `${id}: missing ${missingFile}`).toEqual(expected);
+        expect(getProjectModelPath(id)).toBe(expected[0]);
+      });
+    }
+    withAssetAvailability(() => false, () => {
+      expect(getProjectModelPaths(id)).toEqual([]);
+      expect(getProjectModelPath(id)).toBeNull();
+    });
+  }
+});
+
+test("detail pages render every ordered model with stable URL keys and unique multi-model titles", async () => {
+  for (const { id, files } of modelProjects) {
+    const project = portfolioData.find((item) => item.id === id)!;
+    expect(await detailViewers(id), id).toEqual(files.map((file, index) => ({
+      modelUrl: `/images/glb/${file}`,
+      key: `/images/glb/${file}`,
+      projectTitle: files.length > 1 ? `${project.title} — 모델 ${index + 1}` : project.title,
+    })));
+  }
+  expect(await detailViewers("jd002")).toEqual([]);
+});
+
+test("both existing jd004 records use the exact wireless-stethoscope title without changing identity or image paths", () => {
+  for (const id of ["jd004_a", "jd004_b"]) {
+    expect(portfolioData.find((project) => project.id === id)).toEqual({
+      id,
+      folder: id,
+      title: "UNC-무선청진기",
+      category: "Product",
+      image: `/images/portfolio/${id}/${id}_thumbs.png`,
+    });
+    expect(getProjectModelPath(id)).toBe(`/images/glb/${id}_web.glb`);
+  }
+  expect(portfolioData.some(({ id }) => id === "jd004")).toBe(false);
 });
