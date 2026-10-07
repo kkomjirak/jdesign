@@ -26,10 +26,13 @@ function detailImages(folder: string): DetailImage[] {
   return exports.inspectImages!(folder);
 }
 
-test("JPEG sequence metadata preserves actual frame dimensions instead of the old PNG-only fallback", () => {
-  const frames = detailImages("jd038");
-  expect(frames.find((image) => image.filename === "jd038_2.jpg")).toMatchObject({ width: 736, height: 405, ratio: 1.82 });
-  expect(frames.find((image) => image.filename === "jd038_12.jpg")).toMatchObject({ width: 728, height: 405 });
+test("JPEG sequence metadata preserves all eleven supplied 730x400 frame dimensions instead of the PNG-only fallback", () => {
+  const images = detailImages("jd038");
+  for (let index = 2; index <= 12; index++) {
+    expect(images.find((image) => image.filename === `jd038_${index}.jpg`)).toMatchObject({
+      src: `/images/portfolio/jd038/jd038_${index}.jpg`, width: 730, height: 400, ratio: 1.82,
+    });
+  }
 });
 
 test("detail images preserve numeric ordering and exclude thumbnails for all nine new folders", () => {

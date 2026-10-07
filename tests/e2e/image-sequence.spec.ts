@@ -8,7 +8,7 @@ const title = "STER SUTTLE";
 const regionName = `${title} 연속 이미지`;
 const filenames = Array.from({ length: 11 }, (_, index) => `jd038_${index + 2}.jpg`);
 const frames = filenames.map((filename) => ({
-  filename, src: `/images/portfolio/jd038/${filename}`, width: 736, height: 405, ratio: 736 / 405,
+  filename, src: `/images/portfolio/jd038/${filename}`, width: 730, height: 400, ratio: 730 / 400,
 }));
 const ordinary = [{ filename: "jd038_1.png", src: "/images/portfolio/jd038/jd038_1.png", width: 842, height: 595, ratio: 842 / 595 }];
 
@@ -152,7 +152,10 @@ test("jd038 export decodes all eleven originals, plays exact numeric order and w
   for (const filename of [...filenames, filenames[0]]) {
     const image = player.getByRole("img");
     await expect(image).toHaveAttribute("src", `${basePath}/images/portfolio/jd038/${filename}`);
-    expect(await image.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0)).toBe(true);
+    expect(await image.evaluate((el) => {
+      const frame = el as HTMLImageElement;
+      return { complete: frame.complete, width: frame.naturalWidth, height: frame.naturalHeight };
+    })).toEqual({ complete: true, width: 730, height: 400 });
     expect((await viewport.boundingBox())!.height).toBeCloseTo(initialBox.height, 1);
     await page.clock.runFor(180);
   }
